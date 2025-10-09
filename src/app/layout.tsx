@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +15,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Éditeur d'Images IA",
-  description: "Transformez vos images avec l'intelligence artificielle - Éditeur d'images basé sur l'IA",
+  title: "Éditeur d'Images IA - Transformez vos images instantanément",
+  description: "Transformez vos images avec l'intelligence artificielle de pointe. Éditeur d'images IA gratuit, rapide et puissant. Propulsé par Next.js 15, React 19 et Replicate.",
+  keywords: ["IA", "intelligence artificielle", "éditeur d'images", "transformation d'images", "AI image editor"],
+  authors: [{ name: "AI Image Editor Team" }],
+  openGraph: {
+    title: "Éditeur d'Images IA",
+    description: "Transformez vos images avec l'IA en quelques secondes",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -23,11 +32,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="fr">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
