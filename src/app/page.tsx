@@ -52,7 +52,7 @@ export default function Home() {
       } else {
         setError(data.error || 'Erreur lors de la génération')
       }
-    } catch (err) {
+    } catch {
       setError('Erreur de connexion')
     } finally {
       setIsGenerating(false)
@@ -65,10 +65,10 @@ export default function Home() {
         {/* Header */}
         <div className="text-center py-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Éditeur d'Images IA
+            Éditeur d&apos;Images IA
           </h1>
           <p className="text-base text-gray-600">
-            Transformez vos images avec l'intelligence artificielle
+            Transformez vos images avec l&apos;intelligence artificielle
           </p>
         </div>
 
@@ -103,7 +103,7 @@ export default function Home() {
                           className="mx-auto rounded-lg object-cover"
                         />
                         <p className="text-sm text-gray-500">
-                          Cliquez pour changer d'image
+                          Cliquez pour changer d&apos;image
                         </p>
                       </div>
                     ) : (
@@ -128,7 +128,7 @@ export default function Home() {
                             Cliquez pour uploader une image
                           </p>
                           <p className="text-sm text-gray-500">
-                            PNG, JPG ou JPEG jusqu'à 10MB
+                            PNG, JPG ou JPEG jusqu&apos;à 10MB
                           </p>
                         </div>
                       </div>
@@ -160,7 +160,7 @@ export default function Home() {
                     <span>Génération en cours...</span>
                   </div>
                 ) : (
-                  'Générer l\'image'
+                  "Générer l'image"
                 )}
               </button>
 
@@ -238,7 +238,7 @@ export default function Home() {
                       </svg>
                     </div>
                     <p className="text-gray-500">
-                      L'image générée apparaîtra ici
+                      L&apos;image générée apparaîtra ici
                     </p>
                   </div>
                 )}
@@ -250,7 +250,7 @@ export default function Home() {
         {/* Footer */}
         <div className="text-center py-4">
           <p className="text-gray-500 text-sm">
-            Propulsé par l'IA - Transformez vos images en quelques clics
+            Propulsé par l&apos;IA - Transformez vos images en quelques clics
           </p>
         </div>
       </div>

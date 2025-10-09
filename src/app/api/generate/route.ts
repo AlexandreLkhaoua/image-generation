@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     // 1. Upload de l'image d'entrée vers Supabase
     const fileName = `${Date.now()}-${image.name}`
-    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+    const { error: uploadError } = await supabaseAdmin.storage
       .from(process.env.SUPABASE_INPUT_BUCKET!)
       .upload(fileName, image, {
         cacheControl: '3600',
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     try {
       // L'API Replicate attend un tableau même pour une seule image
       output = await replicate.run(
-        process.env.REPLICATE_MODEL! as any,
+        process.env.REPLICATE_MODEL! as `${string}/${string}` | `${string}/${string}:${string}`,
         {
           input: {
             prompt: enhancedPrompt,
@@ -124,7 +124,8 @@ export async function POST(request: NextRequest) {
       } else if (output && typeof output === 'object' && 'url' in output && typeof output.url === 'function') {
         outputImageUrl = output.url()
       } else if (output && typeof output === 'object' && 'url' in output) {
-        outputImageUrl = (output as any).url
+        const outputObj = output as { url: string }
+        outputImageUrl = outputObj.url
       } else if (Array.isArray(output) && output.length > 0) {
         outputImageUrl = output[0]
       } else {
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
 
     // 6. Upload de l'image générée vers Supabase
     const outputFileName = `generated-${Date.now()}.png`
-    const { data: outputUploadData, error: outputUploadError } = await supabaseAdmin.storage
+    const { error: outputUploadError } = await supabaseAdmin.storage
       .from(process.env.SUPABASE_OUTPUT_BUCKET!)
       .upload(outputFileName, imageBuffer, {
         contentType: 'image/png',
