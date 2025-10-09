@@ -14,8 +14,16 @@ export function Header() {
   }
 
   const handleLogout = async () => {
-    await signOut()
-    router.push('/')
+    try {
+      await signOut()
+      router.push('/')
+      router.refresh() // Force le rafraîchissement de la page
+    } catch (error) {
+      console.error('Erreur déconnexion:', error)
+      // Redirige quand même vers la page d'accueil
+      router.push('/')
+      router.refresh()
+    }
   }
 
   return (
@@ -120,7 +128,7 @@ export function Header() {
                 onClick={handleLogin}
                 variant="default"
                 size="default"
-                className="shadow-md hover:shadow-lg transition-all"
+                className="shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 ease-in-out"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />

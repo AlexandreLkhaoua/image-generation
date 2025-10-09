@@ -52,13 +52,6 @@ export default function DashboardPage() {
     }
   }, [user, authLoading, router])
 
-  // Charger les projets de l'utilisateur
-  useEffect(() => {
-    if (user) {
-      loadProjects()
-    }
-  }, [user])
-
   const loadProjects = async () => {
     try {
       const { data, error } = await supabase
@@ -75,6 +68,14 @@ export default function DashboardPage() {
       setLoadingProjects(false)
     }
   }
+
+  // Charger les projets de l'utilisateur
+  useEffect(() => {
+    if (user) {
+      loadProjects()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
   const handleGenerate = async () => {
     if (selectedFile) {

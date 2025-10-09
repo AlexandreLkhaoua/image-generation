@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
-import { createClient } from '@/lib/supabase-browser'
+import { createClient, resetClient } from '@/lib/supabase-browser'
 
 interface AuthContextType {
   user: User | null
@@ -23,11 +23,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Récupérer la session initiale
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        if (error) {
+          console.error('Erreur récupération session:', error)
+        }
+        setSession(session)
+        setUser(session?.user ?? null)
+        setLoading(false)
+      })
+      .catch((error) => {
+        console.error('Erreur session:', error)
+        setSession(null)
+        setUser(null)
+        setLoading(false)
+      })
 
     // Écouter les changements d'authentification
     const {
@@ -39,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     return () => subscription.unsubscribe()
-  }, [supabase.auth])
+  }, [])
 
   const signUp = async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({
@@ -64,7 +74,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    try {
+      const { error } = await supabase.auth.signOut({ scope: 'local' })
+      if (error) throw error
+      
+      // Force la mise à jour de l'état
+      setUser(null)
+      setSession(null)
+      
+      // Supprime les données locales de Supabase
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('supabase.auth.token')
+        sessionStorage.clear()
+      }
+      
+      // Réinitialise le client singleton
+      resetClient()
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error)
+      
+      // Force quand même la déconnexion locale en cas d'erreur
+      setUser(null)
+      setSession(null)
+      
+      // Nettoie le localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('supabase.auth.token')
+        sessionStorage.clear()
+      }
+      
+      // Réinitialise le client
+      resetClient()
+    }
   }
 
   return (
