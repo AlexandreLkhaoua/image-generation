@@ -1,36 +1,137 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Éditeur d'Images IA
 
-## Getting Started
+Un éditeur d'images moderne basé sur l'intelligence artificielle, construit avec Next.js, Supabase, et Replicate.
 
-First, run the development server:
+## 🚀 Fonctionnalités
+
+- **Upload d'une seule image** : Interface drag-and-drop pour charger votre image
+- **Transformation par IA** : Utilisez des prompts en langage naturel pour transformer votre image
+- **Stockage cloud** : Images stockées de manière sécurisée avec Supabase
+- **Interface moderne** : Design épuré et responsive avec Tailwind CSS
+- **Téléchargement** : Sauvegardez votre création directement
+
+## 🛠️ Technologies utilisées
+
+- **Frontend** : Next.js 15 + TypeScript + Tailwind CSS
+- **Backend** : Next.js API Routes
+- **Base de données** : Supabase (PostgreSQL)
+- **Stockage** : Supabase Storage
+- **IA** : Replicate (modèle google/nano-banana)
+
+## 📋 Prérequis
+
+- Node.js 18+ 
+- Compte Supabase configuré
+- Compte Replicate avec accès API
+
+## ⚙️ Configuration
+
+### 1. Cloner le projet
+```bash
+git clone <votre-repo>
+cd project-images-generation
+npm install
+```
+
+### 2. Configuration Supabase
+
+Créez un projet Supabase et configurez :
+
+**Table `projects` :**
+```sql
+CREATE TABLE public.projects (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp without time zone DEFAULT now(),
+  input_image_url text NOT NULL,
+  output_image_url text,
+  prompt text NOT NULL,
+  status text DEFAULT 'processing'::text,
+  CONSTRAINT projects_pkey PRIMARY KEY (id)
+);
+```
+
+**Buckets de stockage :**
+- `input-images` : Pour les images uploadées
+- `output-images` : Pour les images générées
+
+### 3. Variables d'environnement
+
+Créez un fichier `.env.local` :
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Supabase Buckets
+SUPABASE_INPUT_BUCKET=input-images
+SUPABASE_OUTPUT_BUCKET=output-images
+
+# Replicate Configuration
+REPLICATE_API_TOKEN=your_replicate_token
+REPLICATE_MODEL=google/nano-banana
+```
+
+## 🚀 Lancement
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📱 Utilisation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Uploadez UNE image** : Cliquez sur la zone d'upload ou glissez-déposez votre image unique
+2. **Décrivez la transformation** : Saisissez un prompt décrivant comment vous souhaitez transformer cette image
+3. **Générez** : Cliquez sur "Générer l'image" et attendez le résultat (environ 10-15 secondes)
+4. **Téléchargez** : Sauvegardez votre création
 
-## Learn More
+**Note importante** : L'application traite une seule image à la fois. L'API Replicate nécessite que l'URL de l'image soit passée dans un tableau, mais elle ne traite qu'une seule image par requête.
 
-To learn more about Next.js, take a look at the following resources:
+## 🏗️ Structure du projet
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/
+│   ├── api/
+│   │   └── generate/
+│   │       └── route.ts          # API pour la génération d'images
+│   ├── globals.css                # Styles globaux
+│   ├── layout.tsx                 # Layout principal
+│   └── page.tsx                   # Page d'accueil
+├── lib/
+│   └── supabase.ts               # Configuration Supabase
+└── types/
+    └── project.ts                # Types TypeScript
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔧 API Endpoints
 
-## Deploy on Vercel
+### POST `/api/generate`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Génère une image transformée à partir d'une **seule** image d'entrée et d'un prompt.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Body (FormData):**
+- `image`: File - **Une seule image** à transformer
+- `prompt`: string - Description de la transformation souhaitée
+
+**Response:**
+```json
+{
+  "success": boolean,
+  "projectId": string,
+  "outputImageUrl": string
+}
+```
+
+**Détails techniques:**
+- L'image est uploadée vers Supabase Storage (bucket `input-images`)
+- L'URL publique est générée et passée à Replicate dans un tableau: `image_input: [url]`
+- Replicate traite l'image unique avec le modèle `google/nano-banana`
+- L'image résultante est téléchargée et stockée dans le bucket `output-images`
+- Un enregistrement est créé dans la table `projects` avec les deux URLs
+
+## 📄 Licence
+
+MIT License - voir le fichier LICENSE pour plus de détails.
