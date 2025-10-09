@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '../../../../lib/supabase'
+import { createClient } from '@/lib/supabase-server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import Replicate from 'replicate'
+
+const supabaseAdmin = createSupabaseClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+)
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN!,
@@ -8,6 +20,17 @@ const replicate = new Replicate({
 
 export async function POST(request: NextRequest) {
   try {
+    // Vérifier l'authentification
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Non authentifié' },
+        { status: 401 }
+      )
+    }
+
     const formData = await request.formData()
     const image = formData.get('image') as File
     const prompt = formData.get('prompt') as string
@@ -43,10 +66,11 @@ export async function POST(request: NextRequest) {
 
     const inputImageUrl = urlData.publicUrl
 
-    // 3. Créer un enregistrement dans la base de données
+    // 3. Créer un enregistrement dans la base de données avec user_id
     const { data: projectData, error: dbError } = await supabaseAdmin
       .from('projects')
       .insert({
+        user_id: user.id,
         input_image_url: inputImageUrl,
         prompt: prompt,
         status: 'processing'

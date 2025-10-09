@@ -1,115 +1,74 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Header } from '@/components/layout/header'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ImageUpload } from '@/components/generate/image-upload'
-import { PromptInput } from '@/components/generate/prompt-input'
-import { ResultDisplay } from '@/components/generate/result-display'
-import { useFileUpload } from '@/hooks/use-file-upload'
-import { useImageGeneration } from '@/hooks/use-image-generation'
+import { Button } from '@/components/ui/button'
+import { motion } from 'framer-motion'
+import { useAuth } from '@/contexts/auth-context'
 
 export default function Home() {
-  const [prompt, setPrompt] = useState('')
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  
-  const {
-    selectedFile,
-    previewUrl,
-    error: uploadError,
-    handleDrop,
-    handleFileInput,
-  } = useFileUpload()
+  const router = useRouter()
+  const { user } = useAuth()
 
-  const {
-    generatedImage,
-    isLoading,
-    error: generationError,
-    generateImage,
-  } = useImageGeneration()
-
-  const handleGenerate = async () => {
-    if (selectedFile) {
-      await generateImage(selectedFile, prompt)
+  const handleGetStarted = () => {
+    if (user) {
+      router.push('/dashboard')
+    } else {
+      router.push('/signup')
     }
   }
 
-  const error = uploadError || generationError
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-      <div className="container mx-auto px-4 py-6">
-        <div className="max-w-7xl mx-auto">
-          <Header />
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
+      <Header />
+      
+      <div className="w-full px-6 max-w-[1600px] mx-auto">
+        <div className="text-center py-20 px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-3xl mb-8 shadow-2xl">
+              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
 
-          {/* Main Content - 3 Column Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            
-            {/* Column 1: Image Upload */}
-            <Card>
-              <CardHeader>
-                <CardTitle>1. Sélectionnez votre image</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ImageUpload
-                  previewUrl={previewUrl}
-                  onDrop={handleDrop}
-                  onFileSelect={() => fileInputRef.current?.click()}
-                  error={uploadError}
-                />
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileInput}
-                  className="hidden"
-                />
-              </CardContent>
-            </Card>
+            <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-6">
+              Transformez vos images avec l&apos;IA
+            </h1>
 
-            {/* Column 2: Prompt Input */}
-            <Card>
-              <CardHeader>
-                <CardTitle>2. Décrivez la transformation</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <PromptInput
-                  value={prompt}
-                  onChange={setPrompt}
-                  onGenerate={handleGenerate}
-                  isLoading={isLoading}
-                  disabled={!selectedFile || !prompt.trim()}
-                />
-                {error && !isLoading && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-700 text-sm">{error}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Column 3: Result Display */}
-            <Card>
-              <CardHeader>
-                <CardTitle>3. Résultat</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResultDisplay
-                  imageUrl={generatedImage?.url || null}
-                  projectId={generatedImage?.projectId}
-                  isLoading={isLoading}
-                />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Footer */}
-          <footer className="mt-12 text-center text-sm text-gray-500">
-            <p>
-              Propulsé par l&apos;IA • Transformez vos images en quelques clics
+            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
+              Décrivez simplement la transformation souhaitée et laissez notre IA générer des images époustouflantes.
             </p>
-          </footer>
+
+            <div className="flex items-center justify-center gap-4 mb-12">
+              <Button
+                onClick={handleGetStarted}
+                size="default"
+                className="text-lg px-8 py-6 shadow-xl hover:shadow-2xl transition-all"
+              >
+                {user ? 'Accéder au Dashboard' : 'Commencer gratuitement'}
+              </Button>
+
+              {!user && (
+                <Button
+                  onClick={() => router.push('/login')}
+                  variant="outline"
+                  size="default"
+                  className="text-lg px-8 py-6"
+                >
+                  Se connecter
+                </Button>
+              )}
+            </div>
+          </motion.div>
         </div>
+
+        <footer className="py-12 text-center text-sm text-gray-500 border-t border-gray-200">
+          <p>Propulsé par l&apos;IA • Next.js 15 • React 19 • Supabase • Replicate</p>
+        </footer>
       </div>
     </div>
   )
