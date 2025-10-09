@@ -1,416 +1,830 @@
-# ⚡ AI Image Editor# Éditeur d'Images IA
+# ⚡ AI Image Editor# ⚡ AI Image Editor# Éditeur d'Images IA
 
 
 
-> Transformez vos images avec l'intelligence artificielle en quelques secondesUn éditeur d'images moderne basé sur l'intelligence artificielle, construit avec Next.js, Supabase, et Replicate.
+Éditeur d'images IA moderne avec Next.js 15, Supabase et Replicate.
 
 
 
-Un éditeur d'images moderne basé sur l'IA, construit avec Next.js 15, Supabase et Replicate. Interface intuitive, authentification sécurisée, et génération d'images en temps réel.## 🚀 Fonctionnalités
+[![Next.js](https://img.shields.io/badge/Next.js-15.5.4-yellow?style=flat&logo=next.js)](https://nextjs.org/)> Transformez vos images avec l'intelligence artificielle en quelques secondesUn éditeur d'images moderne basé sur l'intelligence artificielle, construit avec Next.js, Supabase, et Replicate.
+
+[![React](https://img.shields.io/badge/React-19.1.0-orange?style=flat&logo=react)](https://reactjs.org/)
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-yellow?style=flat&logo=typescript)](https://www.typescriptlang.org/)
+
+[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20Storage-orange?style=flat&logo=supabase)](https://supabase.com/)
+
+[![Replicate](https://img.shields.io/badge/Replicate-AI-yellow?style=flat)](https://replicate.com/)Un éditeur d'images moderne basé sur l'IA, construit avec Next.js 15, Supabase et Replicate. Interface intuitive, authentification sécurisée, et génération d'images en temps réel.## 🚀 Fonctionnalités
+
+[![License](https://img.shields.io/badge/License-MIT-orange?style=flat)](LICENSE)
 
 
+
+## ✨ Fonctionnalités
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.5.4-black)](https://nextjs.org/)- **Upload d'une seule image** : Interface drag-and-drop pour charger votre image
 
-[![React](https://img.shields.io/badge/React-19.1.0-blue)](https://reactjs.org/)- **Transformation par IA** : Utilisez des prompts en langage naturel pour transformer votre image
+- 🎨 **Édition d'images avec IA** : Utilise Replicate (google/nano-banana) pour transformer vos images
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)- **Stockage cloud** : Images stockées de manière sécurisée avec Supabase
+- 🔐 **Authentification complète** : Système d'auth email/mot de passe avec Supabase[![React](https://img.shields.io/badge/React-19.1.0-blue)](https://reactjs.org/)- **Transformation par IA** : Utilisez des prompts en langage naturel pour transformer votre image
 
-[![Supabase](https://img.shields.io/badge/Supabase-2.74.0-green)](https://supabase.com/)- **Interface moderne** : Design épuré et responsive avec Tailwind CSS
+- 📸 **Galerie personnelle** : Dashboard avec vos projets et historique
 
-- **Téléchargement** : Sauvegardez votre création directement
+- 🎯 **Interface moderne** : Design épuré avec palette jaune/orange "éclair"[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)- **Stockage cloud** : Images stockées de manière sécurisée avec Supabase
 
----
+- ⚡ **Temps réel** : Updates instantanés avec Supabase Realtime
 
-## 🛠️ Technologies utilisées
+- 🔒 **Sécurité** : Row Level Security (RLS) et middleware de protection[![Supabase](https://img.shields.io/badge/Supabase-2.74.0-green)](https://supabase.com/)- **Interface moderne** : Design épuré et responsive avec Tailwind CSS
 
-## 📑 Table des matières
+- 📱 **Responsive** : S'adapte à tous les écrans (max-width: 1600px)
 
-- **Frontend** : Next.js 15 + TypeScript + Tailwind CSS
+- 🎭 **Animations** : Transitions fluides avec Framer Motion- **Téléchargement** : Sauvegardez votre création directement
 
-- [Fonctionnalités](#-fonctionnalités)- **Backend** : Next.js API Routes
 
-- [Stack technique](#-stack-technique)- **Base de données** : Supabase (PostgreSQL)
 
-- [Architecture](#-architecture)- **Stockage** : Supabase Storage
+## 🛠️ Stack Technique---
 
-- [Installation](#-installation)- **IA** : Replicate (modèle google/nano-banana)
+
+
+### Frontend## 🛠️ Technologies utilisées
+
+- **Framework** : Next.js 15.5.4 (App Router, React 19.1.0)
+
+- **Language** : TypeScript 5 (mode strict)## 📑 Table des matières
+
+- **Styling** : Tailwind CSS v4 (palette jaune/orange)
+
+- **Animations** : Framer Motion 12.23.22- **Frontend** : Next.js 15 + TypeScript + Tailwind CSS
+
+- **Icons** : Lucide React
+
+- **Analytics** : Vercel Analytics + Speed Insights- [Fonctionnalités](#-fonctionnalités)- **Backend** : Next.js API Routes
+
+
+
+### Backend & Services- [Stack technique](#-stack-technique)- **Base de données** : Supabase (PostgreSQL)
+
+- **Database** : Supabase PostgreSQL
+
+- **Storage** : Supabase Storage (buckets: input-images, output-images)- [Architecture](#-architecture)- **Stockage** : Supabase Storage
+
+- **Auth** : Supabase Auth (@supabase/ssr, @supabase/auth-helpers-nextjs)
+
+- **IA** : Replicate (modèle google/nano-banana)- [Installation](#-installation)- **IA** : Replicate (modèle google/nano-banana)
+
+- **Validation** : Zod
 
 - [Configuration](#-configuration)
 
-- [Authentification](#-authentification)## 📋 Prérequis
+### Infrastructure
 
-- [Base de données](#-base-de-données)
+- **Hosting** : Vercel (recommandé)- [Authentification](#-authentification)## 📋 Prérequis
 
-- [Déploiement](#-déploiement)- Node.js 18+ 
+- **BDD** : Supabase Cloud
 
-- [Tests](#-tests)- Compte Supabase configuré
-
-- [Historique des modifications](#-historique-des-modifications)- Compte Replicate avec accès API
+- **Storage** : Supabase Storage (buckets publics)- [Base de données](#-base-de-données)
 
 
 
----## ⚙️ Configuration
+## 📐 Architecture- [Déploiement](#-déploiement)- Node.js 18+ 
 
 
 
-## ✨ Fonctionnalités### 1. Cloner le projet
+```- [Tests](#-tests)- Compte Supabase configuré
 
-```bash
+project-images-generation/
 
-### Pour les utilisateursgit clone <votre-repo>
+├── src/- [Historique des modifications](#-historique-des-modifications)- Compte Replicate avec accès API
 
-- 🎨 **Génération d'images IA** : Transformez vos images via des prompts en langage naturelcd project-images-generation
+│   ├── app/                      # Next.js App Router
 
-- 🔐 **Authentification sécurisée** : Inscription/connexion par email et mot de passenpm install
+│   │   ├── page.tsx             # Page d'accueil
 
-- 📁 **Galerie personnelle** : Visualisez et gérez tous vos projets```
+│   │   ├── layout.tsx           # Layout principal
 
-- ⚡ **Génération rapide** : Résultats en quelques secondes avec le modèle Google Nano-Banana
+│   │   ├── login/               # Page de connexion---## ⚙️ Configuration
 
-- 💾 **Téléchargement** : Exportez vos créations en haute qualité### 2. Configuration Supabase
+│   │   ├── signup/              # Page d'inscription
 
-- 🗑️ **Gestion des projets** : Supprimez vos projets et images associées
+│   │   ├── dashboard/           # Dashboard utilisateur (protégé)
 
-Créez un projet Supabase et configurez :
+│   │   ├── auth/callback/       # Callback OAuth
 
-### Techniques
+│   │   └── api/## ✨ Fonctionnalités### 1. Cloner le projet
+
+│   │       ├── generate/        # API de génération d'images
+
+│   │       └── projects/[id]/   # API CRUD projets```bash
+
+│   ├── components/
+
+│   │   ├── auth/### Pour les utilisateursgit clone <votre-repo>
+
+│   │   │   └── auth-form.tsx    # Formulaire login/signup
+
+│   │   ├── layout/- 🎨 **Génération d'images IA** : Transformez vos images via des prompts en langage naturelcd project-images-generation
+
+│   │   │   └── header.tsx       # Header avec auth state
+
+│   │   └── ui/                  # Composants UI réutilisables- 🔐 **Authentification sécurisée** : Inscription/connexion par email et mot de passenpm install
+
+│   ├── contexts/
+
+│   │   └── auth-context.tsx     # Context global d'authentification- 📁 **Galerie personnelle** : Visualisez et gérez tous vos projets```
+
+│   └── lib/
+
+│       ├── supabase-browser.ts  # Client Supabase (browser)- ⚡ **Génération rapide** : Résultats en quelques secondes avec le modèle Google Nano-Banana
+
+│       └── supabase-server.ts   # Client Supabase (server)
+
+├── lib/- 💾 **Téléchargement** : Exportez vos créations en haute qualité### 2. Configuration Supabase
+
+│   └── supabase.ts              # Client Supabase legacy
+
+├── types/- 🗑️ **Gestion des projets** : Supprimez vos projets et images associées
+
+│   └── project.ts               # Types TypeScript
+
+├── middleware.ts                # Protection des routesCréez un projet Supabase et configurez :
+
+├── public/                      # Assets statiques
+
+└── docs/                        # Documentation (voir DOCS.md)### Techniques
+
+```
 
 - 📱 **Responsive design** : S'adapte à tous les écrans**Table `projects` :**
 
+## 🚀 Installation
+
 - 🎭 **Animations fluides** : Framer Motion pour une UX premium```sql
+
+### 1. Cloner le projet
 
 - 🔒 **Row Level Security** : Isolation complète des données utilisateurCREATE TABLE public.projects (
 
-- 🚀 **Performance optimale** : Build optimisé, images lazy-loaded  id uuid NOT NULL DEFAULT gen_random_uuid(),
+```bash
 
-- 📊 **Analytics intégrés** : Vercel Analytics + Speed Insights  created_at timestamp without time zone DEFAULT now(),
+git clone https://github.com/alexandrelkhaoua/project-images-generation.git- 🚀 **Performance optimale** : Build optimisé, images lazy-loaded  id uuid NOT NULL DEFAULT gen_random_uuid(),
 
-  input_image_url text NOT NULL,
+cd project-images-generation
 
----  output_image_url text,
+```- 📊 **Analytics intégrés** : Vercel Analytics + Speed Insights  created_at timestamp without time zone DEFAULT now(),
 
-  prompt text NOT NULL,
 
-## 🛠 Stack technique  status text DEFAULT 'processing'::text,
 
-  CONSTRAINT projects_pkey PRIMARY KEY (id)
+### 2. Installer les dépendances  input_image_url text NOT NULL,
 
-### Frontend);
 
-- **Framework** : Next.js 15.5.4 (App Router)```
 
-- **UI Library** : React 19.1.0
+```bash---  output_image_url text,
 
-- **Language** : TypeScript 5 (strict mode)**Buckets de stockage :**
+npm install
 
-- **Styling** : Tailwind CSS v4- `input-images` : Pour les images uploadées
+```  prompt text NOT NULL,
 
-- **Animations** : Framer Motion 12.23.22- `output-images` : Pour les images générées
 
-- **Utils** : clsx, tailwind-merge
 
-### 3. Variables d'environnement
+### 3. Configuration (voir section suivante)## 🛠 Stack technique  status text DEFAULT 'processing'::text,
 
-### Backend & Database
 
-- **API** : Next.js API RoutesCréez un fichier `.env.local` :
 
-- **Database** : Supabase PostgreSQL```env
+Créer un fichier `.env.local` avec vos clés API.  CONSTRAINT projects_pkey PRIMARY KEY (id)
 
-- **Storage** : Supabase Storage (buckets: input-images, output-images)# Supabase Configuration
 
-- **Auth** : Supabase Auth (@supabase/ssr, @supabase/auth-helpers-nextjs)NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 
-- **ORM** : Supabase ClientNEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+### 4. Lancer le projet### Frontend);
+
+
+
+```bash- **Framework** : Next.js 15.5.4 (App Router)```
+
+npm run dev
+
+```- **UI Library** : React 19.1.0
+
+
+
+Ouvrir [http://localhost:3000](http://localhost:3000)- **Language** : TypeScript 5 (strict mode)**Buckets de stockage :**
+
+
+
+## ⚙️ Configuration- **Styling** : Tailwind CSS v4- `input-images` : Pour les images uploadées
+
+
+
+### Variables d'environnement- **Animations** : Framer Motion 12.23.22- `output-images` : Pour les images générées
+
+
+
+Créer un fichier `.env.local` à la racine du projet :- **Utils** : clsx, tailwind-merge
+
+
+
+```env### 3. Variables d'environnement
+
+# Supabase (7 variables requises)
+
+NEXT_PUBLIC_SUPABASE_URL=https://votre-projet.supabase.co### Backend & Database
+
+NEXT_PUBLIC_SUPABASE_ANON_KEY=votre-anon-key
+
+SUPABASE_SERVICE_ROLE_KEY=votre-service-role-key- **API** : Next.js API RoutesCréez un fichier `.env.local` :
+
+
+
+# Supabase Storage- **Database** : Supabase PostgreSQL```env
+
+SUPABASE_INPUT_BUCKET=input-images
+
+SUPABASE_OUTPUT_BUCKET=output-images- **Storage** : Supabase Storage (buckets: input-images, output-images)# Supabase Configuration
+
+
+
+# Replicate- **Auth** : Supabase Auth (@supabase/ssr, @supabase/auth-helpers-nextjs)NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+
+REPLICATE_API_TOKEN=r8_votre_token
+
+REPLICATE_MODEL=google/nano-banana- **ORM** : Supabase ClientNEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+
+```
 
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+📝 **Template disponible** : Voir `.env.example` pour un exemple complet.
 
 ### AI & Services
 
+### Obtenir les clés API
+
 - **AI Provider** : Replicate# Supabase Buckets
+
+#### Supabase (Database + Auth + Storage)
 
 - **AI Model** : google/nano-banana (image transformation)SUPABASE_INPUT_BUCKET=input-images
 
-- **Analytics** : Vercel Analytics, Vercel Speed InsightsSUPABASE_OUTPUT_BUCKET=output-images
+1. Créer un compte sur [supabase.com](https://supabase.com/)
 
+2. Créer un nouveau projet- **Analytics** : Vercel Analytics, Vercel Speed InsightsSUPABASE_OUTPUT_BUCKET=output-images
 
+3. Aller dans **Settings** > **API**
 
-### Dev Tools# Replicate Configuration
+4. Copier :
+
+   - `Project URL` → `NEXT_PUBLIC_SUPABASE_URL`
+
+   - `anon public` → `NEXT_PUBLIC_SUPABASE_ANON_KEY`### Dev Tools# Replicate Configuration
+
+   - `service_role` (⚠️ secret) → `SUPABASE_SERVICE_ROLE_KEY`
 
 - **Testing** : Jest, @testing-library/reactREPLICATE_API_TOKEN=your_replicate_token
 
+#### Replicate (IA)
+
 - **Linting** : ESLint (Next.js config)REPLICATE_MODEL=google/nano-banana
 
-- **Type Checking** : TypeScript strict```
+1. Créer un compte sur [replicate.com](https://replicate.com/)
+
+2. Aller dans **Account** > **API Tokens**- **Type Checking** : TypeScript strict```
+
+3. Créer un token → `REPLICATE_API_TOKEN`
 
 - **Package Manager** : npm
 
+## 🔐 Authentification
+
 ## 🚀 Lancement
+
+### Système d'authentification
 
 ---
 
-```bash
+Le projet utilise **Supabase Auth** avec :
 
-## 🏗 Architecturenpm run dev
+- ✅ Inscription / Connexion par email/mot de passe```bash
+
+- ✅ Gestion de session SSR-compatible
+
+- ✅ Context React global (`useAuth()` hook)## 🏗 Architecturenpm run dev
+
+- ✅ Protection des routes avec middleware
+
+- ✅ Redirection automatique si non authentifié```
+
+
+
+### Utilisation### Structure des dossiers
+
+
+
+```tsxOuvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
+
+import { useAuth } from '@/contexts/auth-context';
 
 ```
 
-### Structure des dossiers
+function MyComponent() {
 
-Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
+  const { user, signIn, signOut, loading } = useAuth();src/## 📱 Utilisation
 
-```
+  
 
-src/## 📱 Utilisation
+  if (loading) return <div>Chargement...</div>;├── app/                          # Next.js App Router
 
-├── app/                          # Next.js App Router
+  
 
-│   ├── api/                      # API Routes1. **Uploadez UNE image** : Cliquez sur la zone d'upload ou glissez-déposez votre image unique
+  if (!user) {│   ├── api/                      # API Routes1. **Uploadez UNE image** : Cliquez sur la zone d'upload ou glissez-déposez votre image unique
 
-│   │   ├── generate/route.ts     # Génération d'images (POST)2. **Décrivez la transformation** : Saisissez un prompt décrivant comment vous souhaitez transformer cette image
+    return <button onClick={() => signIn(email, password)}>
 
-│   │   └── projects/[id]/route.ts # Suppression (DELETE)3. **Générez** : Cliquez sur "Générer l'image" et attendez le résultat (environ 10-15 secondes)
+      Se connecter│   │   ├── generate/route.ts     # Génération d'images (POST)2. **Décrivez la transformation** : Saisissez un prompt décrivant comment vous souhaitez transformer cette image
 
-│   ├── dashboard/page.tsx        # Dashboard utilisateur (protégé)4. **Téléchargez** : Sauvegardez votre création
+    </button>;
 
-│   ├── login/page.tsx            # Page de connexion
+  }│   │   └── projects/[id]/route.ts # Suppression (DELETE)3. **Générez** : Cliquez sur "Générer l'image" et attendez le résultat (environ 10-15 secondes)
 
-│   ├── signup/page.tsx           # Page d'inscription**Note importante** : L'application traite une seule image à la fois. L'API Replicate nécessite que l'URL de l'image soit passée dans un tableau, mais elle ne traite qu'une seule image par requête.
+  
 
-│   ├── auth/callback/route.ts    # Callback OAuth
+  return <div>Bienvenue {user.email}</div>;│   ├── dashboard/page.tsx        # Dashboard utilisateur (protégé)4. **Téléchargez** : Sauvegardez votre création
 
-│   ├── layout.tsx                # Layout global avec AuthProvider## 🏗️ Structure du projet
+}
+
+```│   ├── login/page.tsx            # Page de connexion
+
+
+
+### Routes protégées│   ├── signup/page.tsx           # Page d'inscription**Note importante** : L'application traite une seule image à la fois. L'API Replicate nécessite que l'URL de l'image soit passée dans un tableau, mais elle ne traite qu'une seule image par requête.
+
+
+
+Le fichier `middleware.ts` protège automatiquement :│   ├── auth/callback/route.ts    # Callback OAuth
+
+- `/dashboard/*` : Nécessite authentification
+
+- `/api/generate/*` : Nécessite authentification│   ├── layout.tsx                # Layout global avec AuthProvider## 🏗️ Structure du projet
+
+- `/api/projects/*` : Nécessite authentification
 
 │   ├── page.tsx                  # Landing page
 
+### Configuration Supabase Auth
+
 │   └── globals.css               # Styles globaux```
+
+Dans le dashboard Supabase :
 
 │src/
 
-├── components/├── app/
+**Authentication > URL Configuration** :
 
-│   ├── auth/                     # Composants d'authentification│   ├── api/
+```├── components/├── app/
 
-│   │   └── auth-form.tsx         # Formulaire connexion/inscription│   │   └── generate/
+Site URL: http://localhost:3000
+
+Redirect URLs: │   ├── auth/                     # Composants d'authentification│   ├── api/
+
+  - http://localhost:3000/auth/callback
+
+  - https://votre-domaine.vercel.app/auth/callback│   │   └── auth-form.tsx         # Formulaire connexion/inscription│   │   └── generate/
+
+```
 
 │   ├── generate/                 # Composants de génération│   │       └── route.ts          # API pour la génération d'images
 
-│   │   ├── image-upload.tsx      # Upload d'images│   ├── globals.css                # Styles globaux
+**Authentication > Providers** :
+
+- ✅ Email (activé)│   │   ├── image-upload.tsx      # Upload d'images│   ├── globals.css                # Styles globaux
+
+- Optionnel : Google, GitHub, etc.
 
 │   │   ├── prompt-input.tsx      # Saisie du prompt│   ├── layout.tsx                 # Layout principal
 
+## 🗄️ Base de données
+
 │   │   └── result-display.tsx    # Affichage du résultat│   └── page.tsx                   # Page d'accueil
+
+### Schema
 
 │   ├── layout/                   # Composants de layout├── lib/
 
-│   │   ├── header.tsx            # Header avec auth│   └── supabase.ts               # Configuration Supabase
+```sql
 
-│   │   └── footer.tsx            # Footer└── types/
+-- Table principale│   │   ├── header.tsx            # Header avec auth│   └── supabase.ts               # Configuration Supabase
 
-│   ├── sections/                 # Sections de pages    └── project.ts                # Types TypeScript
+CREATE TABLE public.projects (
 
-│   │   └── hero-section.tsx      # Section hero```
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),│   │   └── footer.tsx            # Footer└── types/
 
-│   └── ui/                       # Composants UI réutilisables
+  user_id uuid REFERENCES auth.users(id) NOT NULL,
+
+  created_at timestamp DEFAULT now(),│   ├── sections/                 # Sections de pages    └── project.ts                # Types TypeScript
+
+  input_image_url text NOT NULL,
+
+  output_image_url text,│   │   └── hero-section.tsx      # Section hero```
+
+  prompt text NOT NULL,
+
+  status text DEFAULT 'processing'│   └── ui/                       # Composants UI réutilisables
+
+);
 
 │       ├── button.tsx            # Bouton personnalisé## 🔧 API Endpoints
 
-│       ├── card.tsx              # Carte
+-- Index pour performance
+
+CREATE INDEX idx_projects_user_id ON public.projects(user_id);│       ├── card.tsx              # Carte
+
+```
 
 │       └── textarea.tsx          # Zone de texte### POST `/api/generate`
 
+### Row Level Security (RLS)
+
 │
+
+4 politiques actives :
 
 ├── contexts/Génère une image transformée à partir d'une **seule** image d'entrée et d'un prompt.
 
-│   └── auth-context.tsx          # Context d'authentification
+```sql
 
-│**Body (FormData):**
+-- SELECT : Voir uniquement ses projets│   └── auth-context.tsx          # Context d'authentification
+
+CREATE POLICY "Users can read own projects"
+
+ON public.projects FOR SELECT│**Body (FormData):**
+
+USING (auth.uid() = user_id);
 
 ├── hooks/- `image`: File - **Une seule image** à transformer
 
-│   ├── use-file-upload.ts        # Logique d'upload de fichiers- `prompt`: string - Description de la transformation souhaitée
+-- INSERT : Créer ses projets
 
-│   └── use-image-generation.ts   # Logique de génération d'images
+CREATE POLICY "Users can create own projects"│   ├── use-file-upload.ts        # Logique d'upload de fichiers- `prompt`: string - Description de la transformation souhaitée
 
-│**Response:**
+ON public.projects FOR INSERT
 
-├── lib/```json
+WITH CHECK (auth.uid() = user_id);│   └── use-image-generation.ts   # Logique de génération d'images
+
+
+
+-- DELETE : Supprimer ses projets│**Response:**
+
+CREATE POLICY "Users can delete own projects"
+
+ON public.projects FOR DELETE├── lib/```json
+
+USING (auth.uid() = user_id);
 
 │   ├── supabase-browser.ts       # Client Supabase (browser){
 
-│   ├── supabase-server.ts        # Client Supabase (server)  "success": boolean,
+-- UPDATE : Modifier ses projets
 
-│   └── utils.ts                  # Utilitaires (cn, validateImageFile, etc.)  "projectId": string,
+CREATE POLICY "Users can update own projects"│   ├── supabase-server.ts        # Client Supabase (server)  "success": boolean,
+
+ON public.projects FOR UPDATE
+
+USING (auth.uid() = user_id);│   └── utils.ts                  # Utilitaires (cn, validateImageFile, etc.)  "projectId": string,
+
+```
 
 │  "outputImageUrl": string
 
+### Storage Buckets
+
 └── types/}
+
+Créer 2 buckets **publics** dans Supabase Storage :
 
     └── project.ts                # Types TypeScript```
 
+1. **input-images** : Images uploadées par les utilisateurs
+
+2. **output-images** : Images générées par l'IA
 
 
-middleware.ts                     # Protection des routes**Détails techniques:**
 
-```- L'image est uploadée vers Supabase Storage (bucket `input-images`)
+**Configuration** :middleware.ts                     # Protection des routes**Détails techniques:**
+
+- Public : ✅ (pour accès direct aux URLs)
+
+- File size limit : 50MB (recommandé)```- L'image est uploadée vers Supabase Storage (bucket `input-images`)
+
+- Allowed MIME types : `image/*`
 
 - L'URL publique est générée et passée à Replicate dans un tableau: `image_input: [url]`
 
+## 🎨 Design System
+
 ### Flux de données- Replicate traite l'image unique avec le modèle `google/nano-banana`
+
+### Palette de couleurs (v3.0.0)
 
 - L'image résultante est téléchargée et stockée dans le bucket `output-images`
 
+Thème **"éclair"** jaune/orange :
+
 ```- Un enregistrement est créé dans la table `projects` avec les deux URLs
 
-User → Landing Page → Signup/Login
+```css
 
-  ↓## 📄 Licence
+/* Couleurs principales */User → Landing Page → Signup/Login
+
+--primary: yellow-500 → orange-600 (gradient)
+
+--primary-hover: yellow-600 → orange-700  ↓## 📄 Licence
+
+--background: amber-50 → white → orange-50
 
 Dashboard (protected)
 
-  ↓MIT License - voir le fichier LICENSE pour plus de détails.
+/* Utilisation */
 
-Upload Image → Select File → Preview
-  ↓
+.button {  ↓MIT License - voir le fichier LICENSE pour plus de détails.
+
+  @apply bg-gradient-to-r from-yellow-500 to-orange-600;
+
+  @apply hover:from-yellow-600 hover:to-orange-700;Upload Image → Select File → Preview
+
+}  ↓
+
 Enter Prompt → "add a hat to the dog"
-  ↓
-Generate → API /api/generate
-  ↓
-  1. Verify Auth (middleware)
+
+.focus-ring {  ↓
+
+  @apply focus:ring-2 focus:ring-yellow-500;Generate → API /api/generate
+
+}  ↓
+
+```  1. Verify Auth (middleware)
+
   2. Upload to Supabase Storage (input-images)
-  3. Insert in DB with user_id
+
+### Composants UI  3. Insert in DB with user_id
+
   4. Call Replicate API
-  5. Download generated image
-  6. Upload to Supabase Storage (output-images)
-  7. Update DB with output URL
-  ↓
+
+Tous les composants sont dans `src/components/ui/` :  5. Download generated image
+
+- `button.tsx` : Boutons avec gradients jaune/orange  6. Upload to Supabase Storage (output-images)
+
+- `textarea.tsx` : Textarea avec focus ring jaune  7. Update DB with output URL
+
+- Plus à venir...  ↓
+
 Display Result → Download or Delete
-```
 
----
+## 📦 Déploiement```
 
-## 🚀 Installation
 
-### Prérequis
-- Node.js 18+
+
+### Vercel (recommandé)---
+
+
+
+1. **Connecter le repo GitHub** :## 🚀 Installation
+
+   ```bash
+
+   vercel --prod### Prérequis
+
+   ```- Node.js 18+
+
 - npm ou yarn
-- Compte Supabase
-- Compte Replicate
+
+2. **Configurer les variables d'environnement** :- Compte Supabase
+
+   - Dashboard Vercel > Project > Settings > Environment Variables- Compte Replicate
+
+   - Copier toutes les variables de `.env.local`
 
 ### Étapes
 
-```bash
-# 1. Cloner le repository
+3. **Configurer Supabase** :
+
+   - Ajouter l'URL de production dans les Redirect URLs```bash
+
+   - `https://votre-app.vercel.app/auth/callback`# 1. Cloner le repository
+
 git clone https://github.com/AlexandreLkhaoua/image-generation.git
-cd image-generation
 
-# 2. Installer les dépendances
-npm install
+4. **Déployer** :cd image-generation
 
-# 3. Configurer les variables d'environnement
+   ```bash
+
+   git push origin main# 2. Installer les dépendances
+
+   ```npm install
+
+
+
+### Autres plateformes# 3. Configurer les variables d'environnement
+
 cp .env.example .env.local
-# Éditer .env.local avec vos credentials
 
-# 4. Lancer en mode développement
-npm run dev
+Le projet est compatible avec tout hébergeur supportant Next.js 15 :# Éditer .env.local avec vos credentials
+
+- Netlify
+
+- Railway# 4. Lancer en mode développement
+
+- Rendernpm run dev
+
+- AWS Amplify
 
 # 5. Ouvrir http://localhost:3000
+
+## 🧪 Tests```
+
+
+
+### Lancer le build---
+
+
+
+```bash## ⚙️ Configuration
+
+npm run build
+
+```### Variables d'environnement
+
+
+
+Résultat attendu :Créer un fichier `.env.local` à la racine :
+
 ```
 
----
+✓ Compiled successfully in ~1342ms```env
 
-## ⚙️ Configuration
+✓ Collecting page data# Supabase
 
-### Variables d'environnement
+✓ Generating static pages (10/10)NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 
-Créer un fichier `.env.local` à la racine :
+✓ Finalizing page optimizationNEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 
-```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-# Supabase Storage Buckets
-SUPABASE_INPUT_BUCKET=input-images
-SUPABASE_OUTPUT_BUCKET=output-images
+Route (app)                              Size     First Load JS
 
-# Replicate
+┌ ○ /                                    7.89 kB         110 kB# Supabase Storage Buckets
+
+├ ○ /_not-found                          0 B                0 BSUPABASE_INPUT_BUCKET=input-images
+
+├ ○ /api/generate                        0 B                0 BSUPABASE_OUTPUT_BUCKET=output-images
+
+└ ○ /auth/callback                       0 B                0 B
+
+```# Replicate
+
 REPLICATE_API_TOKEN=your_replicate_token
-REPLICATE_MODEL=google/nano-banana
+
+### Vérifier les erreursREPLICATE_MODEL=google/nano-banana
+
 ```
 
-### Configuration Supabase
+```bash
+
+npm run lint### Configuration Supabase
+
+```
 
 1. Créer un projet sur [Supabase](https://supabase.com)
-2. Récupérer l'URL et les clés API dans Settings > API
+
+## 📚 Documentation2. Récupérer l'URL et les clés API dans Settings > API
+
 3. Configurer la base de données (voir section suivante)
 
-### Configuration Replicate
+- **README.md** : Ce fichier (vue d'ensemble et guide)
 
-1. Créer un compte sur [Replicate](https://replicate.com)
-2. Générer un token API dans Account Settings
-3. Le modèle `google/nano-banana` est utilisé par défaut
+- **CHANGELOG.md** : Historique des versions### Configuration Replicate
 
----
+- **CONTRIBUTING.md** : Guide de contribution et standards
 
-## 🔐 Authentification
+- **DEV-NOTES.md** : Notes de développement et backlog1. Créer un compte sur [Replicate](https://replicate.com)
 
-### Système d'authentification Supabase
+- **DOCS.md** : Meta-documentation (organisation des docs)2. Générer un token API dans Account Settings
 
-L'application utilise Supabase Auth avec email/mot de passe.
+- **.env.example** : Template des variables d'environnement3. Le modèle `google/nano-banana` est utilisé par défaut
 
-#### Fonctionnalités
-- ✅ Inscription avec confirmation par email
+
+
+Pour plus de détails, voir [DOCS.md](DOCS.md).---
+
+
+
+## 📝 Historique du projet## 🔐 Authentification
+
+
+
+Le projet a évolué en 4 versions majeures :### Système d'authentification Supabase
+
+
+
+### v1.0.0 (Initial)L'application utilise Supabase Auth avec email/mot de passe.
+
+- Setup Next.js 15 + TypeScript
+
+- Intégration Replicate (nano-banana)#### Fonctionnalités
+
+- Upload et génération d'images- ✅ Inscription avec confirmation par email
+
 - ✅ Connexion sécurisée
-- ✅ Gestion de session avec cookies
-- ✅ Déconnexion
-- ✅ Protection des routes avec middleware
+
+### v1.5.0 (UI Improvements)- ✅ Gestion de session avec cookies
+
+- Header moderne avec stats- ✅ Déconnexion
+
+- Design responsive (max-w-[1600px])- ✅ Protection des routes avec middleware
+
+- Animations Framer Motion
 
 #### Architecture Auth
 
-```typescript
-// AuthContext Provider (client-side)
-useAuth() → {
-  user: User | null
+### v2.0.0 (Authentication)
+
+- Système d'auth Supabase complet```typescript
+
+- Dashboard utilisateur protégé// AuthContext Provider (client-side)
+
+- Row Level Security (RLS)useAuth() → {
+
+- Middleware de protection  user: User | null
+
   session: Session | null
-  loading: boolean
-  signUp(email, password)
-  signIn(email, password)
-  signOut()
+
+### v3.0.0 (Design Overhaul)  loading: boolean
+
+- Nouvelle palette jaune/orange "éclair"  signUp(email, password)
+
+- 14 composants redesignés  signIn(email, password)
+
+- Design system cohérent  signOut()
+
 }
 
+Voir [CHANGELOG.md](CHANGELOG.md) pour les détails complets.
+
 // Middleware (server-side)
-middleware.ts → Protège /dashboard et /api/*
 
-// Routes protégées
-/dashboard      → Redirection vers /login si non auth
-/api/generate   → 401 si non auth
-/api/projects/* → 401 si non auth
-```
+## 🤝 Contributionmiddleware.ts → Protège /dashboard et /api/*
 
-#### Flux d'inscription
 
-1. User saisit email + mot de passe sur `/signup`
+
+Les contributions sont bienvenues ! Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour :// Routes protégées
+
+- Standards de code/dashboard      → Redirection vers /login si non auth
+
+- Workflow Git (branches, commits)/api/generate   → 401 si non auth
+
+- Guide de soumission des PRs/api/projects/* → 401 si non auth
+
+- Checklist de test```
+
+
+
+## 📄 Licence#### Flux d'inscription
+
+
+
+MIT License - voir [LICENSE](LICENSE)1. User saisit email + mot de passe sur `/signup`
+
 2. `signUp()` crée le compte Supabase
-3. Email de confirmation envoyé
+
+## 👤 Auteur3. Email de confirmation envoyé
+
 4. User clique sur le lien → `/auth/callback`
-5. Redirection vers `/dashboard`
 
-#### Flux de connexion
+**Alexandre Lkhaoua**5. Redirection vers `/dashboard`
 
-1. User saisit credentials sur `/login`
+- GitHub : [@alexandrelkhaoua](https://github.com/alexandrelkhaoua)
+
+- Projet : [project-images-generation](https://github.com/alexandrelkhaoua/project-images-generation)#### Flux de connexion
+
+
+
+## 🙏 Remerciements1. User saisit credentials sur `/login`
+
 2. `signIn()` authentifie via Supabase
-3. Session créée avec cookies httpOnly
-4. Redirection automatique vers `/dashboard`
 
----
+- [Next.js](https://nextjs.org/) - Framework React3. Session créée avec cookies httpOnly
+
+- [Supabase](https://supabase.com/) - Backend-as-a-Service4. Redirection automatique vers `/dashboard`
+
+- [Replicate](https://replicate.com/) - API IA
+
+- [Tailwind CSS](https://tailwindcss.com/) - Styling---
+
+- [Framer Motion](https://www.framer.com/motion/) - Animations
 
 ## 🗄 Base de données
 
+---
+
 ### Schéma de la table `projects`
+
+⚡ **Fait avec passion et beaucoup de caféine** ☕
 
 ```sql
 CREATE TABLE public.projects (
