@@ -36,6 +36,7 @@ export function useImageGeneration(): UseImageGenerationReturn {
       const response = await fetch('/api/generate', {
         method: 'POST',
         body: formData,
+        credentials: 'same-origin', // Inclure les cookies dans la requête
       })
 
       if (!response.ok) {

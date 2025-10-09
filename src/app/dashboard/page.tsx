@@ -89,15 +89,58 @@ export default function DashboardPage() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet ?')) return
 
     try {
+      // Vérifier la session avant de faire la requête
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      console.log('Client - Session check:', {
+        hasSession: !!session,
+        hasAccessToken: !!session?.access_token,
+        error: sessionError
+      })
+      
+      if (!session) {
+        alert('Session expirée. Veuillez vous reconnecter.')
+        router.push('/login')
+        return
+      }
+
       const response = await fetch(`/api/projects/${projectId}`, {
         method: 'DELETE',
+        credentials: 'include', // Inclure les cookies dans la requête
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+
+      console.log('Client - DELETE response:', {
+        status: response.status,
+        ok: response.ok,
+        statusText: response.statusText
       })
 
       if (response.ok) {
         setProjects(projects.filter(p => p.id !== projectId))
+        alert('Projet supprimé avec succès!')
+      } else {
+        const text = await response.text()
+        console.error('Client - DELETE error response:', {
+          status: response.status,
+          text: text
+        })
+        
+        let errorMessage = 'Impossible de supprimer le projet'
+        try {
+          const data = JSON.parse(text)
+          errorMessage = data.error || errorMessage
+        } catch (e) {
+          errorMessage = text || errorMessage
+        }
+        
+        alert(`Erreur: ${errorMessage}`)
       }
     } catch (error) {
       console.error('Erreur suppression:', error)
+      alert('Erreur lors de la suppression du projet')
     }
   }
 

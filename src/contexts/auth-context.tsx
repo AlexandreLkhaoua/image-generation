@@ -22,6 +22,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
 
   useEffect(() => {
+    // Nettoyer l'ancien localStorage si présent
+    if (typeof window !== 'undefined') {
+      const oldToken = localStorage.getItem('supabase.auth.token')
+      if (oldToken) {
+        console.log('Migration: nettoyage ancien token localStorage')
+        localStorage.removeItem('supabase.auth.token')
+      }
+    }
+
     // Récupérer la session initiale
     supabase.auth.getSession()
       .then(({ data: { session }, error }) => {
@@ -56,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        // Pas besoin de emailRedirectTo car on gère tout côté client
         data: {
           email_confirm: false,
         },

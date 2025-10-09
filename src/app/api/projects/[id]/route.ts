@@ -19,12 +19,33 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
+    
+    // Log des cookies reçus
+    const cookies = request.cookies.getAll()
+    console.log('DELETE /api/projects - Cookies reçus:', {
+      count: cookies.length,
+      names: cookies.map(c => c.name),
+      hasAuthCookie: cookies.some(c => c.name.includes('auth'))
+    })
+    
     const supabase = await createClient()
 
     // Vérifier l'authentification
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
+    console.log('DELETE /api/projects - Auth check:', { 
+      hasUser: !!user, 
+      userId: user?.id,
+      authError: authError?.message,
+      authErrorDetails: authError
+    })
+    
     if (authError || !user) {
+      console.error('DELETE /api/projects - Auth failed:', {
+        error: authError,
+        message: authError?.message,
+        status: authError?.status
+      })
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
