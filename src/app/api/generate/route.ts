@@ -90,10 +90,9 @@ export async function POST(request: NextRequest) {
     console.log('Appel Replicate avec URL:', inputImageUrl)
     console.log('Prompt utilisateur:', prompt)
     
-    // Améliorer le prompt pour une meilleure interprétation par le modèle Gemini 2.5
-    // Le modèle fonctionne mieux avec des instructions claires et conversationnelles
-    const enhancedPrompt = `Please edit this image. ${prompt}. Keep all other elements unchanged. Make the edits look natural and realistic.`
-    console.log('Prompt envoyé à Replicate:', enhancedPrompt)
+    // Utiliser directement le prompt de l'utilisateur pour que le modèle l'interprète correctement
+    // Le modèle Gemini 2.5 comprend bien les instructions naturelles en anglais et en français
+    console.log('Prompt envoyé à Replicate:', prompt)
     
     let output
     try {
@@ -102,7 +101,7 @@ export async function POST(request: NextRequest) {
         process.env.REPLICATE_MODEL! as `${string}/${string}` | `${string}/${string}:${string}`,
         {
           input: {
-            prompt: enhancedPrompt,
+            prompt: prompt,  // Utiliser le prompt original de l'utilisateur
             image_input: [inputImageUrl],
             aspect_ratio: "match_input_image",
             output_format: "jpg"

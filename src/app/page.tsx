@@ -1,7 +1,6 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Header } from '@/components/layout/header'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/contexts/auth-context'
@@ -20,7 +19,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
-      <Header />
       
       <div className="w-full px-6 max-w-[1600px] mx-auto">
         <div className="text-center py-20 px-4">
@@ -57,7 +55,7 @@ export default function Home() {
                   onClick={() => router.push('/login')}
                   variant="outline"
                   size="default"
-                  className="text-lg px-8 py-6"
+                  className="text-lg px-8 py-6 text-orange-600 hover:text-orange-700 border-orange-500 hover:border-orange-600"
                 >
                   Se connecter
                 </Button>

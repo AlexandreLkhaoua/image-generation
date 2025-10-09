@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
-import { Header } from '@/components/layout/header'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ImageUpload } from '@/components/generate/image-upload'
@@ -12,6 +11,7 @@ import { useFileUpload } from '@/hooks/use-file-upload'
 import { useImageGeneration } from '@/hooks/use-image-generation'
 import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase-browser'
+import { formatDateParis } from '@/lib/utils'
 
 interface Project {
   id: string
@@ -100,6 +100,24 @@ export default function DashboardPage() {
     }
   }
 
+  const handleDownload = async (imageUrl: string, projectId: string) => {
+    try {
+      const response = await fetch(imageUrl)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `image-ai-${projectId}.png`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Erreur téléchargement:', error)
+      alert('Erreur lors du téléchargement de l\'image')
+    }
+  }
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center">
@@ -113,8 +131,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
-      <Header />
-
       <div className="w-full px-6 py-8 max-w-[1600px] mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
@@ -224,7 +240,7 @@ export default function DashboardPage() {
                         {project.prompt}
                       </p>
                       <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>{new Date(project.created_at).toLocaleDateString('fr-FR')}</span>
+                        <span>{formatDateParis(project.created_at)}</span>
                         <span className={`px-2 py-1 rounded-full ${
                           project.status === 'completed' 
                             ? 'bg-green-100 text-green-700'
@@ -236,13 +252,12 @@ export default function DashboardPage() {
                       
                       <div className="mt-3 flex gap-2">
                         {project.output_image_url && (
-                          <a
-                            href={project.output_image_url}
-                            download
-                            className="flex-1 px-3 py-2 text-sm bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-lg hover:from-yellow-600 hover:to-orange-700 transition-colors text-center"
+                          <button
+                            onClick={() => handleDownload(project.output_image_url!, project.id)}
+                            className="flex-1 px-3 py-2 text-sm bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-lg hover:from-yellow-600 hover:to-orange-700 transition-colors"
                           >
                             Télécharger
-                          </a>
+                          </button>
                         )}
                         <button
                           onClick={() => handleDelete(project.id)}

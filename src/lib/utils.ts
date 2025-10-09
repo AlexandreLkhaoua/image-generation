@@ -58,3 +58,31 @@ export async function downloadImage(url: string, filename: string): Promise<void
     throw new Error('Échec du téléchargement')
   }
 }
+
+/**
+ * Format date to Paris timezone with date and time
+ * Assumes dateString is in UTC (as stored in Supabase)
+ */
+export function formatDateParis(dateString: string): string {
+  // Supabase returns timestamps without 'Z', so we need to append it to treat it as UTC
+  const utcDate = dateString.endsWith('Z') ? dateString : dateString + 'Z'
+  return new Date(utcDate).toLocaleString('fr-FR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'Europe/Paris'
+  })
+}
+
+/**
+ * Format date to Paris timezone with full format
+ * Assumes dateString is in UTC (as stored in Supabase)
+ */
+export function formatDateParisFull(dateString: string): string {
+  // Supabase returns timestamps without 'Z', so we need to append it to treat it as UTC
+  const utcDate = dateString.endsWith('Z') ? dateString : dateString + 'Z'
+  return new Date(utcDate).toLocaleString('fr-FR', {
+    dateStyle: 'long',
+    timeStyle: 'medium',
+    timeZone: 'Europe/Paris'
+  })
+}

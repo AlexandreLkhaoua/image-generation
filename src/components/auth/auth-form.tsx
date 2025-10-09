@@ -45,7 +45,8 @@ export function AuthForm() {
         if (error) {
           setError(error.message)
         } else {
-          setSuccess('Compte créé ! Vérifiez votre email pour confirmer votre inscription.')
+          // Redirection directe vers le dashboard sans confirmation email
+          router.push('/dashboard')
         }
       } else {
         const { error } = await signIn(email, password)
