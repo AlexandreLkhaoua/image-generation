@@ -44,7 +44,13 @@ export function useImageGeneration(): UseImageGenerationReturn {
       }
 
       const data = await response.json()
-      setGeneratedImage(data)
+      console.log('Données reçues de l\'API:', data)
+      
+      // Adapter le format de la réponse
+      setGeneratedImage({
+        url: data.outputImageUrl || data.url,
+        projectId: data.projectId
+      })
     } catch (err) {
       console.error('Erreur de génération:', err)
       setError(err instanceof Error ? err.message : 'Échec de la génération d&apos;image')
