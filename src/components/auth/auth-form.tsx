@@ -38,7 +38,7 @@ export function AuthForm() {
         setError(error.message)
         setLoading(false)
       }
-    } catch (err) {
+    } catch {
       setError('Une erreur est survenue lors de la connexion avec Google')
       setLoading(false)
     }
@@ -80,7 +80,7 @@ export function AuthForm() {
           router.push('/dashboard')
         }
       }
-    } catch (err) {
+    } catch {
       setError('Une erreur est survenue')
     } finally {
       setLoading(false)

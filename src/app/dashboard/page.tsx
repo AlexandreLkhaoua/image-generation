@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 import { useAuth } from '@/contexts/auth-context'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -24,7 +25,7 @@ interface Project {
   payment_amount: number | null
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -177,7 +178,7 @@ export default function DashboardPage() {
         try {
           const data = JSON.parse(text)
           errorMessage = data.error || errorMessage
-        } catch (e) {
+        } catch {
           errorMessage = text || errorMessage
         }
         
@@ -327,10 +328,11 @@ export default function DashboardPage() {
                   >
                     <div className="aspect-video bg-gray-100 relative">
                       {project.output_image_url ? (
-                        <img
+                        <Image
                           src={project.output_image_url}
                           alt="Generated"
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
                         />
                       ) : project.payment_status === 'paid' && project.status === 'processing' ? (
                         <div className="w-full h-full flex items-center justify-center">
@@ -433,5 +435,20 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   )
 }
