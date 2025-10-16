@@ -1,14 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ImageUpload } from '@/components/generate/image-upload'
 import { PromptInput } from '@/components/generate/prompt-input'
 import { useFileUpload } from '@/hooks/use-file-upload'
-import { useImageGeneration } from '@/hooks/use-image-generation'
+import { useStripeCheckout } from '@/hooks/use-stripe-checkout'
 import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase-browser'
 import { formatDateParis } from '@/lib/utils'
@@ -20,14 +20,18 @@ interface Project {
   output_image_url: string | null
   prompt: string
   status: string
+  payment_status: string
+  payment_amount: number | null
 }
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [projects, setProjects] = useState<Project[]>([])
   const [loadingProjects, setLoadingProjects] = useState(true)
   const [prompt, setPrompt] = useState('')
+  const [generatingProject, setGeneratingProject] = useState<string | null>(null)
   const supabase = createClient()
 
   const {
@@ -39,11 +43,10 @@ export default function DashboardPage() {
   } = useFileUpload()
 
   const {
-    generatedImage,
-    isLoading: generating,
-    error: generationError,
-    generateImage,
-  } = useImageGeneration()
+    isLoading: isCheckoutLoading,
+    error: checkoutError,
+    createCheckoutSession,
+  } = useStripeCheckout({ imageFile: selectedFile, prompt })
 
   // Redirection si non authentifié
   useEffect(() => {
@@ -77,11 +80,53 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
-  const handleGenerate = async () => {
-    if (selectedFile) {
-      await generateImage(selectedFile, prompt)
-      // Recharger les projets après génération
-      setTimeout(loadProjects, 1000)
+  // Gérer le retour de Stripe après paiement
+  useEffect(() => {
+    const sessionId = searchParams.get('session_id')
+    if (sessionId) {
+      // Recharger les projets pour afficher le nouveau projet payé
+      loadProjects()
+      // Nettoyer l'URL
+      window.history.replaceState({}, '', '/dashboard')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  const handlePayAndGenerate = async () => {
+    if (!selectedFile || !prompt.trim()) {
+      return
+    }
+    // Créer la session de paiement Stripe
+    await createCheckoutSession()
+  }
+
+  const handleGenerateFromPaidProject = async (projectId: string) => {
+    setGeneratingProject(projectId)
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ projectId }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erreur lors de la génération')
+      }
+
+      const data = await response.json()
+      console.log('✅ Génération réussie:', data)
+      
+      // Recharger les projets
+      await loadProjects()
+      
+    } catch (error) {
+      console.error('Erreur génération:', error)
+      alert(error instanceof Error ? error.message : 'Erreur lors de la génération')
+    } finally {
+      setGeneratingProject(null)
     }
   }
 
@@ -213,22 +258,40 @@ export default function DashboardPage() {
               <PromptInput
                 value={prompt}
                 onChange={setPrompt}
-                onGenerate={handleGenerate}
-                disabled={!selectedFile || generating}
-                isLoading={generating}
+                onGenerate={handlePayAndGenerate}
+                disabled={!selectedFile || isCheckoutLoading}
+                isLoading={isCheckoutLoading}
               />
               
-              {(uploadError || generationError) && (
+              <Button
+                onClick={handlePayAndGenerate}
+                disabled={!selectedFile || !prompt.trim() || isCheckoutLoading}
+                className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isCheckoutLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Préparation du paiement...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    Générer (2,00 €)
+                  </span>
+                )}
+              </Button>
+              
+              {(uploadError || checkoutError) && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-                  {uploadError || generationError}
+                  {uploadError || checkoutError}
                 </div>
               )}
 
-              {generatedImage && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-600">
-                  ✓ Image générée avec succès !
-                </div>
-              )}
+              <div className="text-xs text-gray-500 text-center">
+                Paiement sécurisé par Stripe • 2,00 € par génération
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -269,11 +332,30 @@ export default function DashboardPage() {
                           alt="Generated"
                           className="w-full h-full object-cover"
                         />
-                      ) : (
+                      ) : project.payment_status === 'paid' && project.status === 'processing' ? (
                         <div className="w-full h-full flex items-center justify-center">
                           <div className="text-center">
                             <div className="w-8 h-8 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                            <p className="text-sm text-gray-500">Génération...</p>
+                            <p className="text-sm text-gray-500">Génération en cours...</p>
+                          </div>
+                        </div>
+                      ) : project.payment_status === 'paid' ? (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="text-center">
+                            <svg className="w-12 h-12 text-green-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p className="text-sm text-gray-600">Paiement validé</p>
+                            <p className="text-xs text-gray-500">Prêt à générer</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="text-center">
+                            <svg className="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            <p className="text-sm text-gray-600">En attente de paiement</p>
                           </div>
                         </div>
                       )}
@@ -283,18 +365,50 @@ export default function DashboardPage() {
                       <p className="text-sm text-gray-600 mb-2 line-clamp-2">
                         {project.prompt}
                       </p>
-                      <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
                         <span>{formatDateParis(project.created_at)}</span>
-                        <span className={`px-2 py-1 rounded-full ${
-                          project.status === 'completed' 
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {project.status}
-                        </span>
+                        <div className="flex gap-1">
+                          <span className={`px-2 py-1 rounded-full ${
+                            project.payment_status === 'paid'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-orange-100 text-orange-700'
+                          }`}>
+                            {project.payment_status === 'paid' ? 'Payé' : 'En attente'}
+                          </span>
+                          <span className={`px-2 py-1 rounded-full ${
+                            project.status === 'completed' 
+                              ? 'bg-green-100 text-green-700'
+                              : project.status === 'processing'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {project.status}
+                          </span>
+                        </div>
                       </div>
                       
                       <div className="mt-3 flex gap-2">
+                        {project.payment_status === 'paid' && !project.output_image_url && project.status !== 'processing' && (
+                          <button
+                            onClick={() => handleGenerateFromPaidProject(project.id)}
+                            disabled={generatingProject === project.id}
+                            className="flex-1 px-3 py-2 text-sm bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                          >
+                            {generatingProject === project.id ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Génération...
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                Lancer la génération
+                              </>
+                            )}
+                          </button>
+                        )}
                         {project.output_image_url && (
                           <button
                             onClick={() => handleDownload(project.output_image_url!, project.id)}
