@@ -256,12 +256,11 @@ function DashboardContent() {
               <CardTitle>2. Décrivez la transformation</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <PromptInput
+              <textarea
                 value={prompt}
-                onChange={setPrompt}
-                onGenerate={handlePayAndGenerate}
-                disabled={!selectedFile || isCheckoutLoading}
-                isLoading={isCheckoutLoading}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Décrivez comment vous voulez transformer votre image... Ex: 'add a hat to the dog', 'make the sky more dramatic', 'change background to beach'"
+                className="w-full min-h-[120px] p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent resize-none"
               />
               
               <Button
