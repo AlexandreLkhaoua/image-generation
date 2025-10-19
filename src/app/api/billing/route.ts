@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase-server'
+import { supabaseAdmin } from '../../../../lib/supabase'
 
 export async function GET(req: NextRequest) {
   try {
@@ -42,6 +43,20 @@ export async function GET(req: NextRequest) {
         const latestCharge = paymentIntent.latest_charge
         const receiptUrl = latestCharge && typeof latestCharge === 'object' ? latestCharge.receipt_url : null
 
+        // Récupérer le prompt depuis Supabase
+        let prompt = 'Génération d\'image IA'
+        if (session.metadata?.project_id) {
+          const { data: project } = await supabaseAdmin
+            .from('projects')
+            .select('prompt')
+            .eq('id', session.metadata.project_id)
+            .single()
+          
+          if (project?.prompt) {
+            prompt = project.prompt
+          }
+        }
+
         return {
           id: paymentIntent.id,
           amount: paymentIntent.amount / 100, // Convertir de centimes en euros
@@ -49,7 +64,7 @@ export async function GET(req: NextRequest) {
           status: paymentIntent.status,
           created: paymentIntent.created,
           receiptUrl,
-          description: session.metadata?.project_id ? `Projet: ${session.metadata.project_id}` : 'Génération d\'image IA',
+          prompt,
         }
       })
     )

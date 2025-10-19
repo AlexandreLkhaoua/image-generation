@@ -42,6 +42,9 @@ Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
 - 🖼️ **Dashboard personnel** : Galerie de tous vos projets
 - 📱 **Responsive** : Interface adaptée mobile, tablette et desktop
 - ⚡ **Animations fluides** : Transitions Framer Motion
+- 💳 **Paiements Stripe** : Système de paiement sécurisé intégré
+- 📧 **Notifications email** : Envoi automatique d'emails (échecs de paiement, annulations)
+- 🔔 **Webhooks Stripe** : Gestion des événements de paiement en temps réel
 
 ---
 
@@ -179,6 +182,7 @@ vercel
 
 - [CHANGELOG.md](./CHANGELOG.md) - Historique des versions
 - [DEV-NOTES.md](./DEV-NOTES.md) - Notes de développement et roadmap
+- [EMAIL_SETUP.md](./EMAIL_SETUP.md) - Configuration des emails et webhooks
 
 ---
 

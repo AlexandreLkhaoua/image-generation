@@ -18,10 +18,10 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
+    <div className="h-screen overflow-hidden bg-white flex flex-col">
       
-      <div className="w-full px-6 max-w-[1600px] mx-auto">
-        <div className="text-center py-20 px-4">
+      <div className="flex-1 w-full px-6 max-w-[1600px] mx-auto flex flex-col">
+        <div className="flex-1 flex items-center justify-center text-center px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -64,7 +64,7 @@ export default function Home() {
           </motion.div>
         </div>
 
-        <footer className="py-12 text-center text-sm text-gray-500 border-t border-gray-200">
+        <footer className="py-6 text-center text-sm text-gray-500 border-t border-gray-100">
           <p>Propulsé par l&apos;IA • Next.js 15 • React 19 • Supabase • Replicate</p>
         </footer>
       </div>

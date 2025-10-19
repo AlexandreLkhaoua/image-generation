@@ -1,0 +1,93 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { stripe, CURRENCY } from '@/lib/stripe'
+import { createClient } from '@/lib/supabase-server'
+
+// Définition des packs de crédits
+export const CREDIT_PACKS = [
+  { id: 'starter', credits: 5, price: 10, name: 'Pack Starter', popular: false },
+  { id: 'standard', credits: 10, price: 15, name: 'Pack Standard', popular: true },
+  { id: 'pro', credits: 25, price: 30, name: 'Pack Pro', popular: false },
+  { id: 'premium', credits: 50, price: 50, name: 'Pack Premium', popular: false },
+]
+
+export async function POST(req: NextRequest) {
+  try {
+    // Récupérer l'utilisateur authentifié
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Non authentifié' },
+        { status: 401 }
+      )
+    }
+
+    // Récupérer le pack choisi
+    const body = await req.json()
+    const { packId } = body
+
+    if (!packId) {
+      return NextResponse.json(
+        { error: 'Pack ID requis' },
+        { status: 400 }
+      )
+    }
+
+    // Trouver le pack correspondant
+    const pack = CREDIT_PACKS.find(p => p.id === packId)
+    if (!pack) {
+      return NextResponse.json(
+        { error: 'Pack non trouvé' },
+        { status: 404 }
+      )
+    }
+
+    // Déterminer l'URL de base
+    const baseUrl = process.env.NEXT_PUBLIC_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+
+    console.log('📍 Base URL pour Stripe:', baseUrl)
+
+    // Créer une session Stripe Checkout pour l'achat de crédits
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: CURRENCY,
+            product_data: {
+              name: pack.name,
+              description: `${pack.credits} crédits pour générer ${pack.credits} images IA`,
+            },
+            unit_amount: pack.price * 100, // Convertir en centimes
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${baseUrl}/dashboard?session_id={CHECKOUT_SESSION_ID}&credits_purchase=true`,
+      cancel_url: `${baseUrl}/billing`,
+      metadata: {
+        user_id: user.id,
+        pack_id: pack.id,
+        credits: pack.credits.toString(),
+        type: 'credit_purchase',
+      },
+    })
+
+    console.log('✅ Session Stripe créée pour achat de crédits:', session.id)
+
+    return NextResponse.json({
+      sessionId: session.id,
+      url: session.url,
+    })
+
+  } catch (error) {
+    console.error('Erreur création checkout session crédits:', error)
+    return NextResponse.json(
+      { error: 'Erreur lors de la création de la session de paiement' },
+      { status: 500 }
+    )
+  }
+}

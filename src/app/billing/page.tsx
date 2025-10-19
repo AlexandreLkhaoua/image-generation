@@ -15,7 +15,23 @@ interface Payment {
   created: number
   receiptUrl: string | null
   description: string
+  credits?: number
 }
+
+interface CreditPack {
+  id: string
+  credits: number
+  price: number
+  name: string
+  popular: boolean
+}
+
+const CREDIT_PACKS: CreditPack[] = [
+  { id: 'starter', credits: 5, price: 10, name: 'Pack Starter', popular: false },
+  { id: 'standard', credits: 10, price: 15, name: 'Pack Standard', popular: true },
+  { id: 'pro', credits: 25, price: 30, name: 'Pack Pro', popular: false },
+  { id: 'premium', credits: 50, price: 50, name: 'Pack Premium', popular: false },
+]
 
 export default function BillingPage() {
   const { user, loading: authLoading } = useAuth()
@@ -23,15 +39,17 @@ export default function BillingPage() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [buyingPack, setBuyingPack] = useState<string | null>(null)
+  const [promoCode, setPromoCode] = useState('')
+  const [applyingPromo, setApplyingPromo] = useState(false)
+  const [promoMessage, setPromoMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
-  // Redirection si non authentifié
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login')
     }
   }, [user, authLoading, router])
 
-  // Charger l'historique des paiements
   useEffect(() => {
     const fetchPayments = async () => {
       try {
@@ -84,6 +102,73 @@ export default function BillingPage() {
     )
   }
 
+  const handleBuyCredits = async (packId: string) => {
+    setBuyingPack(packId)
+    try {
+      const response = await fetch('/api/buy-credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ packId }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur lors de l achat')
+      }
+
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (err) {
+      console.error('Erreur achat crédits:', err)
+      alert(err instanceof Error ? err.message : 'Erreur lors de l achat')
+    } finally {
+      setBuyingPack(null)
+    }
+  }
+
+  const handleApplyPromoCode = async () => {
+    if (!promoCode.trim()) {
+      setPromoMessage({ type: 'error', text: 'Veuillez entrer un code promo' })
+      return
+    }
+
+    setApplyingPromo(true)
+    setPromoMessage(null)
+
+    try {
+      const response = await fetch('/api/promo-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoCode }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Code promo invalide')
+      }
+
+      setPromoMessage({ 
+        type: 'success', 
+        text: `Code promo appliqué ! ${data.credits} crédits ajoutés.` 
+      })
+      setPromoCode('')
+      
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
+    } catch (err) {
+      setPromoMessage({ 
+        type: 'error', 
+        text: err instanceof Error ? err.message : 'Code promo invalide' 
+      })
+    } finally {
+      setApplyingPromo(false)
+    }
+  }
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center">
@@ -99,45 +184,145 @@ export default function BillingPage() {
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
       <div className="max-w-7xl mx-auto px-4 py-12">
         <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Facturation & Crédits
+          </h1>
+          <p className="text-lg text-gray-600">
+            Achetez des crédits et gérez vos paiements
+          </p>
+        </motion.div>
+
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ delay: 0.1 }}
+          className="mb-12"
         >
-          <div className="mb-8">
-            <Button
-              variant="outline"
-              onClick={() => router.push('/dashboard')}
-              className="mb-4"
-            >
-              ← Retour au dashboard
-            </Button>
-            
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Historique des paiements
-            </h1>
-            <p className="text-gray-600">
-              Consultez l&apos;historique de toutes vos transactions
-            </p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Acheter des crédits</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {CREDIT_PACKS.map((pack) => (
+              <Card 
+                key={pack.id}
+                className={`relative overflow-hidden transition-all hover:shadow-lg ${
+                  pack.popular ? 'border-2 border-transparent bg-gradient-to-r from-yellow-500 to-orange-600 bg-clip-border' : ''
+                }`}
+                style={pack.popular ? {
+                  backgroundImage: 'linear-gradient(white, white), linear-gradient(to right, rgb(234, 179, 8), rgb(234, 88, 12))',
+                  backgroundOrigin: 'border-box',
+                  backgroundClip: 'padding-box, border-box'
+                } : undefined}
+              >
+                {pack.popular && (
+                  <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-3 py-1 text-xs font-bold">
+                    POPULAIRE
+                  </div>
+                )}
+                <CardHeader>
+                  <CardTitle className="text-xl">{pack.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4">
+                    <div className="text-3xl font-bold text-gray-900">{pack.credits}</div>
+                    <div className="text-sm text-gray-500">crédits</div>
+                  </div>
+                  <div className="mb-4">
+                    <div className="text-2xl font-bold bg-gradient-to-r from-yellow-500 to-orange-600 bg-clip-text text-transparent">{pack.price}€</div>
+                    <div className="text-sm text-gray-500">
+                      {(pack.price / pack.credits).toFixed(2)}€ / crédit
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => handleBuyCredits(pack.id)}
+                    disabled={buyingPack === pack.id}
+                    className="w-full"
+                  >
+                    {buyingPack === pack.id ? (
+                      <span className="flex items-center justify-center">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Chargement...
+                      </span>
+                    ) : (
+                      'Acheter'
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </div>
+        </motion.div>
 
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
-              {error}
-            </div>
-          )}
-
-          <Card>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-12"
+        >
+          <Card className="max-w-md mx-auto">
             <CardHeader>
-              <CardTitle>Paiements</CardTitle>
+              <CardTitle className="text-xl">Code Promo</CardTitle>
             </CardHeader>
             <CardContent>
-              {payments.length === 0 ? (
-                <div className="text-center py-12">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  placeholder="Entrez votre code"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-900"
+                  disabled={applyingPromo}
+                />
+                <Button
+                  onClick={handleApplyPromoCode}
+                  disabled={applyingPromo || !promoCode.trim()}
+                >
+                  {applyingPromo ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    'Appliquer'
+                  )}
+                </Button>
+              </div>
+              {promoMessage && (
+                <div className={`mt-3 p-3 rounded-lg text-sm ${
+                  promoMessage.type === 'success' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {promoMessage.text}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Historique des achats</h2>
+          
+          {error ? (
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center text-red-600">
+                  <p>{error}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : payments.length === 0 ? (
+            <Card>
+              <CardContent className="p-12">
+                <div className="text-center text-gray-500">
                   <svg
-                    className="w-16 h-16 text-gray-400 mx-auto mb-4"
+                    className="mx-auto h-12 w-12 mb-4"
                     fill="none"
-                    stroke="currentColor"
                     viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
                     <path
                       strokeLinecap="round"
@@ -146,93 +331,80 @@ export default function BillingPage() {
                       d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
                     />
                   </svg>
-                  <p className="text-gray-600">Aucun paiement pour le moment</p>
-                  <Button
-                    onClick={() => router.push('/dashboard')}
-                    className="mt-4"
-                  >
-                    Commencer une génération
-                  </Button>
+                  <p className="text-lg font-medium">Aucun paiement pour le moment</p>
+                  <p className="text-sm mt-2">Vos achats de crédits apparaîtront ici</p>
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                          Date
-                        </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                          Description
-                        </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                          Montant
-                        </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                          Statut
-                        </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                          Facture
-                        </th>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Description
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Crédits
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Montant
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Statut
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Reçu
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {payments.map((payment) => (
+                      <tr key={payment.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {formatDate(payment.created)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {payment.description || 'Achat de crédits'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {payment.credits ? (
+                            <span className="font-medium bg-gradient-to-r from-yellow-500 to-orange-600 bg-clip-text text-transparent">
+                              +{payment.credits} crédits
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {(payment.amount / 100).toFixed(2)} {payment.currency.toUpperCase()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {getStatusBadge(payment.status)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {payment.receiptUrl ? (
+                            <a
+                              href={payment.receiptUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-gradient-to-r from-yellow-500 to-orange-600 bg-clip-text text-transparent hover:from-yellow-600 hover:to-orange-700 hover:underline font-medium"
+                            >
+                              Voir le reçu
+                            </a>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {payments.map((payment) => (
-                        <tr
-                          key={payment.id}
-                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-4 py-4 text-sm text-gray-900">
-                            {formatDate(payment.created)}
-                          </td>
-                          <td className="px-4 py-4 text-sm text-gray-600">
-                            {payment.description}
-                          </td>
-                          <td className="px-4 py-4 text-sm font-semibold text-gray-900">
-                            {payment.amount.toFixed(2)} {payment.currency.toUpperCase()}
-                          </td>
-                          <td className="px-4 py-4 text-sm">
-                            {getStatusBadge(payment.status)}
-                          </td>
-                          <td className="px-4 py-4 text-sm">
-                            {payment.receiptUrl ? (
-                              <a
-                                href={payment.receiptUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium"
-                              >
-                                <svg
-                                  className="w-4 h-4 mr-1"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                  />
-                                </svg>
-                                PDF
-                              </a>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {payments.length > 0 && (
-            <div className="mt-6 text-sm text-gray-500 text-center">
-              Total des paiements : {payments.length}
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </motion.div>

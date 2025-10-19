@@ -56,14 +56,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // IMPORTANT: Vérifier que le paiement a été effectué
-    if (project.payment_status !== 'paid') {
-      return NextResponse.json(
-        { success: false, error: 'Paiement requis avant de générer l\'image' },
-        { status: 402 } // 402 Payment Required
-      )
-    }
-
     // Vérifier que le projet n'a pas déjà été généré
     if (project.status === 'completed') {
       return NextResponse.json(
@@ -71,6 +63,56 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // NOUVEAU SYSTÈME: Vérifier les crédits de l'utilisateur
+    const { data: userCredits, error: creditsError } = await supabaseAdmin
+      .from('credits')
+      .select('*')
+      .eq('user_id', user.id)
+      .single()
+
+    if (creditsError || !userCredits) {
+      return NextResponse.json(
+        { success: false, error: 'Aucun crédit disponible. Veuillez acheter un pack de crédits.' },
+        { status: 402 }
+      )
+    }
+
+    if (userCredits.credits_remaining <= 0) {
+      return NextResponse.json(
+        { success: false, error: 'Crédits insuffisants. Veuillez acheter un pack de crédits.' },
+        { status: 402 }
+      )
+    }
+
+    // Décrémenter les crédits AVANT la génération (pour éviter les abus en cas d'erreur)
+    const { error: updateCreditsError } = await supabaseAdmin
+      .from('credits')
+      .update({
+        credits_remaining: userCredits.credits_remaining - 1,
+      })
+      .eq('user_id', user.id)
+
+    if (updateCreditsError) {
+      console.error('Erreur décrémentation crédits:', updateCreditsError)
+      return NextResponse.json(
+        { success: false, error: 'Erreur lors de la mise à jour des crédits' },
+        { status: 500 }
+      )
+    }
+
+    // Enregistrer la transaction
+    await supabaseAdmin
+      .from('credit_transactions')
+      .insert({
+        user_id: user.id,
+        amount: -1,
+        type: 'usage',
+        description: `Génération d'image`,
+        project_id: projectId,
+      })
+
+    console.log(`✅ 1 crédit déduit. Crédits restants: ${userCredits.credits_remaining - 1}`)
 
     // Mettre à jour le statut du projet à 'processing'
     await supabaseAdmin

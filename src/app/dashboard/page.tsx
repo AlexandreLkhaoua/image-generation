@@ -38,9 +38,13 @@ function DashboardContent() {
   const [verifyingPayment, setVerifyingPayment] = useState(false)
   const [paymentVerified, setPaymentVerified] = useState(false)
   const [pendingProjectId, setPendingProjectId] = useState<string | null>(null)
+  const [selectedModel, setSelectedModel] = useState('google/nano-banana')
+  const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const supabase = createClient()
+  const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null)
+  const [loadingCredits, setLoadingCredits] = useState(true)
 
   const {
     selectedFile,
@@ -90,10 +94,28 @@ function DashboardContent() {
     }
   }
 
+  // Charger les crédits de l'utilisateur
+  const loadCredits = async () => {
+    try {
+      const response = await fetch('/api/credits')
+      if (response.ok) {
+        const data = await response.json()
+        setCreditsRemaining(data.credits_remaining)
+      } else {
+        console.error('Erreur chargement crédits')
+      }
+    } catch (error) {
+      console.error('Erreur chargement crédits:', error)
+    } finally {
+      setLoadingCredits(false)
+    }
+  }
+
   // Charger les projets de l'utilisateur
   useEffect(() => {
     if (user) {
       loadProjects()
+      loadCredits()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
@@ -159,7 +181,27 @@ function DashboardContent() {
   useEffect(() => {
     const verifyPayment = async () => {
       const sessionId = searchParams.get('session_id')
+      const creditsPurchase = searchParams.get('credits_purchase')
       if (!sessionId) return
+
+      // Si c'est un achat de crédits
+      if (creditsPurchase === 'true') {
+        console.log('Achat de crédits réussi!')
+        setPaymentVerified(true)
+        await loadCredits()
+        
+        // Masquer le message après 3 secondes
+        setTimeout(() => {
+          setPaymentVerified(false)
+        }, 3000)
+
+        // Nettoyer l'URL
+        setTimeout(() => {
+          window.history.replaceState({}, '', '/dashboard')
+        }, 1000)
+        
+        return
+      }
 
       setVerifyingPayment(true)
       console.log('Vérification du paiement Stripe...', sessionId)
@@ -205,8 +247,74 @@ function DashboardContent() {
     if (!selectedFile || !prompt.trim()) {
       return
     }
-    // Créer la session de paiement Stripe
-    await createCheckoutSession()
+
+    // Vérifier si l'utilisateur a assez de crédits
+    if (creditsRemaining !== null && creditsRemaining >= 1) {
+      // L'utilisateur a assez de crédits, on lance directement la génération
+      await handleGenerateWithCredits()
+    } else {
+      // Pas assez de crédits, afficher la modal
+      setShowInsufficientCreditsModal(true)
+    }
+  }
+
+  const handleGenerateWithCredits = async () => {
+    if (!selectedFile || !prompt.trim()) {
+      return
+    }
+
+    setGeneratingProject('new')
+    try {
+      // 1. Créer le projet avec l'image uploadée
+      const formData = new FormData()
+      formData.append('image', selectedFile)
+      formData.append('prompt', prompt)
+      formData.append('model', selectedModel)
+
+      const createResponse = await fetch('/api/projects/create', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!createResponse.ok) {
+        const error = await createResponse.json()
+        throw new Error(error.error || 'Erreur lors de la création du projet')
+      }
+
+      const { projectId } = await createResponse.json()
+
+      // 2. Lancer la génération avec le projectId
+      const generateResponse = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      })
+
+      if (!generateResponse.ok) {
+        const error = await generateResponse.json()
+        throw new Error(error.error || 'Erreur lors de la génération')
+      }
+
+      const data = await generateResponse.json()
+      console.log('✅ Génération réussie:', data)
+
+      // Recharger les projets et les crédits
+      await loadProjects()
+      await loadCredits()
+
+      // Réinitialiser le formulaire
+      setPrompt('')
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+
+    } catch (error) {
+      console.error('Erreur génération:', error)
+      alert(error instanceof Error ? error.message : 'Erreur lors de la génération')
+      await loadCredits()
+    } finally {
+      setGeneratingProject(null)
+    }
   }
 
   const handleGenerateFromPaidProject = async (projectId: string) => {
@@ -228,12 +336,15 @@ function DashboardContent() {
       const data = await response.json()
       console.log('✅ Génération réussie:', data)
       
-      // Recharger les projets
+      // Recharger les projets et les crédits
       await loadProjects()
+      await loadCredits()
       
     } catch (error) {
       console.error('Erreur génération:', error)
       alert(error instanceof Error ? error.message : 'Erreur lors de la génération')
+      // Recharger les crédits même en cas d'erreur (ils peuvent avoir été déduits)
+      await loadCredits()
     } finally {
       setGeneratingProject(null)
     }
@@ -318,7 +429,7 @@ function DashboardContent() {
 
   if (authLoading || !user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Chargement...</p>
@@ -328,13 +439,45 @@ function DashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
+    <div className="min-h-screen bg-white">
       <div className="w-full px-6 py-8 max-w-[1600px] mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-          <p className="text-gray-600">
-            Bienvenue {user.email} ! Créez et gérez vos images IA.
-          </p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+            <p className="text-gray-600">
+              Bienvenue {user.email} ! Créez et gérez vos images IA.
+            </p>
+          </div>
+          
+          {/* Affichage des crédits */}
+          <div className="flex gap-3 items-center">
+            {loadingCredits ? (
+              <div className="text-sm text-gray-500">Chargement...</div>
+            ) : (
+              <>
+                {/* Bouton non cliquable - Crédits disponibles */}
+                <div className="bg-gray-800 text-white px-6 py-4 rounded-xl shadow-lg cursor-default">
+                  <div className="text-sm font-medium opacity-90">Crédits disponibles</div>
+                  <div className="text-4xl font-bold mt-1">
+                    {creditsRemaining ?? 0}
+                  </div>
+                </div>
+                
+                {/* Bouton cliquable - Obtenir des crédits */}
+                <Button
+                  onClick={() => router.push('/billing')}
+                  className="bg-gradient-to-br from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white px-6 py-4 h-auto rounded-xl shadow-lg transition-all hover:shadow-xl"
+                >
+                  <div className="flex flex-col items-center">
+                    <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span className="text-sm font-semibold">Obtenir des crédits</span>
+                  </div>
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Message de vérification du paiement */}
@@ -370,12 +513,12 @@ function DashboardContent() {
         )}
 
         {/* Formulaire de génération */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-          <Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+          <Card className="h-[400px] flex flex-col">
             <CardHeader>
               <CardTitle>1. Sélectionnez votre image</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex items-center justify-center">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -392,50 +535,114 @@ function DashboardContent() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="h-[400px] flex flex-col">
             <CardHeader>
-              <CardTitle>2. Décrivez la transformation</CardTitle>
+              <CardTitle>2. Sélectionnez votre modèle</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="flex-1 flex flex-col justify-center space-y-4">
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 bg-white"
+              >
+                <option value="google/nano-banana">google/nano-banana</option>
+              </select>
+              <p className="text-sm text-gray-500">
+                Sélectionnez le modèle IA pour transformer votre image
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="h-[400px] flex flex-col">
+            <CardHeader>
+              <CardTitle>3. Décrivez la transformation</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col justify-center space-y-4">
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Décrivez comment vous voulez transformer votre image... Ex: 'add a hat to the dog', 'make the sky more dramatic', 'change background to beach'"
-                className="w-full min-h-[120px] p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent resize-none text-gray-900 placeholder:text-gray-400"
+                className="w-full flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent resize-none text-gray-900 placeholder:text-gray-400"
               />
-              
-              <Button
-                onClick={handlePayAndGenerate}
-                disabled={!selectedFile || !prompt.trim() || isCheckoutLoading}
-                className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isCheckoutLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Préparation du paiement...
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
-                    Générer (2,00 €)
-                  </span>
-                )}
-              </Button>
-              
-              {(uploadError || checkoutError) && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-                  {uploadError || checkoutError}
-                </div>
-              )}
-
-              <div className="text-xs text-gray-500 text-center">
-                Paiement sécurisé par Stripe • 2,00 € par génération
-              </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Bouton de génération */}
+        <div className="mb-12 flex flex-col items-center">
+          <Button
+            onClick={handlePayAndGenerate}
+            disabled={!selectedFile || !prompt.trim() || generatingProject === 'new'}
+            className="max-w-md bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-semibold py-4 px-12 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+          >
+            {generatingProject === 'new' ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Génération en cours...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Générer (1 crédit)
+              </span>
+            )}
+          </Button>
+            
+          {(uploadError || checkoutError) && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 max-w-md w-full">
+              {uploadError || checkoutError}
+            </div>
+          )}
+
+          <div className="mt-4 text-xs text-gray-500 text-center">
+            Paiement sécurisé par Stripe • 1 crédit par génération
+          </div>
+        </div>
+
+        {/* Modal crédits insuffisants */}
+        {showInsufficientCreditsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-xl p-8 max-w-md mx-4 shadow-2xl"
+            >
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Crédits insuffisants</h3>
+                <p className="text-gray-600">
+                  Vous n'avez pas assez de crédits pour effectuer cette génération.
+                  <br />
+                  Souhaitez-vous acheter des crédits ?
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    setShowInsufficientCreditsModal(false)
+                    router.push('/billing')
+                  }}
+                  className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white"
+                >
+                  Oui, acheter des crédits
+                </Button>
+                <Button
+                  onClick={() => setShowInsufficientCreditsModal(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Annuler
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
 
         {/* Galerie des projets */}
         <Card>
@@ -581,7 +788,7 @@ function DashboardContent() {
 export default function DashboardPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Chargement...</p>

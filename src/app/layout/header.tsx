@@ -41,8 +41,8 @@ export function Header() {
     <header 
       className={`sticky top-0 z-50 transition-all duration-300 ${
         isScrolled 
-          ? 'backdrop-blur-lg bg-white/80 border-b border-gray-200/50 shadow-sm' 
-          : 'bg-transparent border-b border-transparent'
+          ? 'backdrop-blur-lg bg-white/95 border-b border-gray-200/50 shadow-sm' 
+          : 'bg-white border-b border-gray-100'
       }`}
     >
       <nav className="max-w-[1600px] mx-auto px-6">
@@ -101,9 +101,21 @@ export function Header() {
                   </span>
                 </div>
                 <Button
-                  onClick={() => router.push('/billing')}
-                  variant="outline"
+                  onClick={() => router.push('/dashboard')}
+                  variant="default"
                   size="default"
+                  className="shadow-md hover:shadow-lg transition-all"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  Dashboard
+                </Button>
+                <Button
+                  onClick={() => router.push('/billing')}
+                  variant="default"
+                  size="default"
+                  className="shadow-md hover:shadow-lg transition-all"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -112,8 +124,9 @@ export function Header() {
                 </Button>
                 <Button
                   onClick={handleLogout}
-                  variant="outline"
+                  variant="default"
                   size="default"
+                  className="shadow-md hover:shadow-lg transition-all"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
