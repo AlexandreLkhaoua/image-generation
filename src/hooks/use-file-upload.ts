@@ -43,6 +43,8 @@ export function useFileUpload(): UseFileUploadReturn {
     if (files && files.length > 0) {
       handleFileSelect(files[0])
     }
+    // Réinitialiser l'input pour permettre de sélectionner le même fichier
+    e.target.value = ''
   }
 
   const clearFile = () => {

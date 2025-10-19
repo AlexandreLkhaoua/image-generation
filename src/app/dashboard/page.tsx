@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/auth-context'
@@ -23,6 +23,8 @@ interface Project {
   status: string
   payment_status: string
   payment_amount: number | null
+  stripe_checkout_session_id: string | null
+  stripe_payment_intent_id: string | null
 }
 
 function DashboardContent() {
@@ -33,6 +35,11 @@ function DashboardContent() {
   const [loadingProjects, setLoadingProjects] = useState(true)
   const [prompt, setPrompt] = useState('')
   const [generatingProject, setGeneratingProject] = useState<string | null>(null)
+  const [verifyingPayment, setVerifyingPayment] = useState(false)
+  const [paymentVerified, setPaymentVerified] = useState(false)
+  const [pendingProjectId, setPendingProjectId] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const supabase = createClient()
 
   const {
@@ -58,14 +65,24 @@ function DashboardContent() {
 
   const loadProjects = async () => {
     try {
+      if (!user?.id) {
+        console.log('⏳ User not ready yet, skipping loadProjects')
+        return
+      }
+
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('Erreur Supabase:', error)
+        return
+      }
+      
       setProjects(data || [])
+      console.log('✅ Projets chargés:', data?.length || 0)
     } catch (error) {
       console.error('Erreur chargement projets:', error)
     } finally {
@@ -81,15 +98,106 @@ function DashboardContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
+  // Polling pour vérifier le statut du projet en attente
+  useEffect(() => {
+    if (!pendingProjectId) return
+
+    const checkProjectStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .select('payment_status')
+          .eq('id', pendingProjectId)
+          .single()
+
+        if (error) {
+          console.error('Erreur vérification statut:', error)
+          return
+        }
+
+        if (data?.payment_status === 'paid') {
+          console.log('✓ Paiement confirmé !')
+          setPaymentVerified(true)
+          setVerifyingPayment(false)
+          setPendingProjectId(null)
+          
+          // Arrêter le polling
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current)
+            pollingIntervalRef.current = null
+          }
+
+          // Recharger les projets
+          await loadProjects()
+
+          // Masquer le bandeau vert après 3 secondes
+          setTimeout(() => {
+            setPaymentVerified(false)
+          }, 3000)
+        }
+      } catch (error) {
+        console.error('Erreur polling:', error)
+      }
+    }
+
+    // Vérifier immédiatement
+    checkProjectStatus()
+
+    // Puis vérifier toutes les 1 seconde
+    pollingIntervalRef.current = setInterval(checkProjectStatus, 1000)
+
+    // Nettoyage
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
+      }
+    }
+  }, [pendingProjectId, supabase])
+
   // Gérer le retour de Stripe après paiement
   useEffect(() => {
-    const sessionId = searchParams.get('session_id')
-    if (sessionId) {
-      // Recharger les projets pour afficher le nouveau projet payé
-      loadProjects()
-      // Nettoyer l'URL
-      window.history.replaceState({}, '', '/dashboard')
+    const verifyPayment = async () => {
+      const sessionId = searchParams.get('session_id')
+      if (!sessionId) return
+
+      setVerifyingPayment(true)
+      console.log('Vérification du paiement Stripe...', sessionId)
+
+      try {
+        // Appeler l'API pour vérifier et mettre à jour le paiement
+        const response = await fetch('/api/verify-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok && data.project) {
+          console.log('Paiement vérifié:', data)
+          
+          // Démarrer le polling pour ce projet
+          setPendingProjectId(data.project.id)
+        } else {
+          console.error('Erreur vérification paiement:', data.error)
+          setVerifyingPayment(false)
+          // Recharger quand même les projets
+          await loadProjects()
+        }
+      } catch (error) {
+        console.error('Erreur:', error)
+        setVerifyingPayment(false)
+        await loadProjects()
+      } finally {
+        // Nettoyer l'URL
+        setTimeout(() => {
+          window.history.replaceState({}, '', '/dashboard')
+        }, 1000)
+      }
     }
+
+    verifyPayment()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
@@ -229,6 +337,38 @@ function DashboardContent() {
           </p>
         </div>
 
+        {/* Message de vérification du paiement */}
+        {verifyingPayment && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-yellow-800 font-medium">
+                Paiement réussi ! Vérification en cours...
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Message de confirmation */}
+        {paymentVerified && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg"
+          >
+            <div className="flex items-center gap-3">
+              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p className="text-green-800 font-medium">
+                Opération finalisée
+              </p>
+            </div>
+          </motion.div>
+        )}
+
         {/* Formulaire de génération */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
           <Card>
@@ -236,15 +376,16 @@ function DashboardContent() {
               <CardTitle>1. Sélectionnez votre image</CardTitle>
             </CardHeader>
             <CardContent>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileInput}
+                className="hidden"
+              />
               <ImageUpload
                 onDrop={handleDrop}
-                onFileSelect={() => {
-                  const input = document.createElement('input')
-                  input.type = 'file'
-                  input.accept = 'image/*'
-                  input.onchange = (e) => handleFileInput(e as unknown as React.ChangeEvent<HTMLInputElement>)
-                  input.click()
-                }}
+                onFileSelect={() => fileInputRef.current?.click()}
                 previewUrl={previewUrl}
                 error={uploadError || undefined}
               />

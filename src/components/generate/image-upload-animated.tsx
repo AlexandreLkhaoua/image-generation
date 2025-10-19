@@ -58,7 +58,9 @@ export function ImageUpload({ previewUrl, onDrop, onFileSelect, error }: ImageUp
                 animate={{ opacity: 1 }}
                 className="text-sm text-gray-500 font-medium"
               >
-                ✓ Image chargée avec succès
+                <p className="text-green-600 text-sm font-medium">
+                Image chargée avec succès
+              </p>
               </motion.p>
             </motion.div>
           ) : (

@@ -72,7 +72,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 3. Créer une session Stripe Checkout
+    // 3. Déterminer l'URL de base (localhost ou production)
+    const baseUrl = process.env.NEXT_PUBLIC_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+
+    console.log('📍 Base URL pour Stripe:', baseUrl)
+
+    // 4. Créer une session Stripe Checkout
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -89,21 +95,23 @@ export async function POST(req: NextRequest) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_URL}/dashboard`,
+      success_url: `${baseUrl}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/dashboard`,
       metadata: {
         project_id: project.id,
         user_id: user.id,
       },
     })
 
-    // 4. Mettre à jour le projet avec le session_id
+    // 5. Mettre à jour le projet avec le session_id
     await supabaseAdmin
       .from('projects')
       .update({ stripe_checkout_session_id: session.id })
       .eq('id', project.id)
 
-    // 5. Retourner l'URL de la session Stripe
+    console.log('✅ Session Stripe créée:', session.id)
+
+    // 6. Retourner l'URL de la session Stripe
     return NextResponse.json({
       sessionId: session.id,
       url: session.url,

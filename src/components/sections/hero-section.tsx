@@ -53,8 +53,8 @@ export function HeroSection() {
       >
         {[
           { icon: '⚡', text: 'Rapide', color: 'from-yellow-400 to-orange-500' },
-          { icon: '🎨', text: 'Créatif', color: 'from-pink-400 to-purple-500' },
-          { icon: '🚀', text: 'Puissant', color: 'from-blue-400 to-cyan-500' },
+          { icon: '✨', text: 'Créatif', color: 'from-pink-400 to-purple-500' },
+          { icon: '⭐', text: 'Puissant', color: 'from-blue-400 to-cyan-500' },
         ].map((badge, index) => (
           <motion.div
             key={badge.text}

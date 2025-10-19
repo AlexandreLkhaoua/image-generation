@@ -23,11 +23,13 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              // En production, s'assurer que les cookies sont bien configurés
+              // Configuration des cookies pour localhost et production
               cookieStore.set(name, value, {
                 ...options,
                 sameSite: 'lax',
                 secure: process.env.NODE_ENV === 'production',
+                path: '/',
+                domain: process.env.NODE_ENV === 'production' ? options?.domain : undefined,
               })
             })
           } catch {
