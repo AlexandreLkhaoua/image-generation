@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
@@ -13,7 +13,7 @@ const supabaseAdmin = createSupabaseClient(
   }
 )
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Vérifier l'authentification
     const supabase = await createClient()

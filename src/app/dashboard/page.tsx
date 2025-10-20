@@ -1,13 +1,12 @@
 'use client'
 
-import { Suspense, useEffect, useState, useRef } from 'react'
+import { Suspense, useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/auth-context'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ImageUpload } from '@/components/generate/image-upload'
-import { PromptInput } from '@/components/generate/prompt-input'
 import { useFileUpload } from '@/hooks/use-file-upload'
 import { useStripeCheckout } from '@/hooks/use-stripe-checkout'
 import { motion } from 'framer-motion'
@@ -55,9 +54,7 @@ function DashboardContent() {
   } = useFileUpload()
 
   const {
-    isLoading: isCheckoutLoading,
     error: checkoutError,
-    createCheckoutSession,
   } = useStripeCheckout({ imageFile: selectedFile, prompt })
 
   // Redirection si non authentifié
@@ -67,7 +64,7 @@ function DashboardContent() {
     }
   }, [user, authLoading, router])
 
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     try {
       if (!user?.id) {
         console.log('⏳ User not ready yet, skipping loadProjects')
@@ -92,7 +89,7 @@ function DashboardContent() {
     } finally {
       setLoadingProjects(false)
     }
-  }
+  }, [user, supabase])
 
   // Charger les crédits de l'utilisateur
   const loadCredits = async () => {
@@ -117,8 +114,7 @@ function DashboardContent() {
       loadProjects()
       loadCredits()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user])
+  }, [user, loadProjects])
 
   // Polling pour vérifier le statut du projet en attente
   useEffect(() => {
@@ -240,8 +236,7 @@ function DashboardContent() {
     }
 
     verifyPayment()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
+  }, [searchParams, loadProjects])
 
   const handlePayAndGenerate = async () => {
     if (!selectedFile || !prompt.trim()) {
@@ -617,7 +612,7 @@ function DashboardContent() {
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Crédits insuffisants</h3>
                 <p className="text-gray-600">
-                  Vous n'avez pas assez de crédits pour effectuer cette génération.
+                  Vous n&apos;avez pas assez de crédits pour effectuer cette génération.
                   <br />
                   Souhaitez-vous acheter des crédits ?
                 </p>

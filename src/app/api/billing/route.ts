@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase-server'
 import { supabaseAdmin } from '../../../../lib/supabase'
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     // Récupérer l'utilisateur authentifié
     const supabase = await createClient()

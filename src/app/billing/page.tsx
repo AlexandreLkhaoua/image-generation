@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
+import { CREDIT_PACKS } from '@/lib/credit-packs'
 
 interface Payment {
   id: string
@@ -17,21 +18,6 @@ interface Payment {
   description: string
   credits?: number
 }
-
-interface CreditPack {
-  id: string
-  credits: number
-  price: number
-  name: string
-  popular: boolean
-}
-
-const CREDIT_PACKS: CreditPack[] = [
-  { id: 'starter', credits: 5, price: 10, name: 'Pack Starter', popular: false },
-  { id: 'standard', credits: 10, price: 15, name: 'Pack Standard', popular: true },
-  { id: 'pro', credits: 25, price: 30, name: 'Pack Pro', popular: false },
-  { id: 'premium', credits: 50, price: 50, name: 'Pack Premium', popular: false },
-]
 
 export default function BillingPage() {
   const { user, loading: authLoading } = useAuth()

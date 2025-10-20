@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData()
     const imageFile = formData.get('image') as File
     const prompt = formData.get('prompt') as string
-    const model = formData.get('model') as string || 'google/nano-banana'
+    // const model = formData.get('model') as string || 'google/nano-banana'
 
     if (!imageFile || !prompt) {
       return NextResponse.json(
