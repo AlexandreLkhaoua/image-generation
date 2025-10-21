@@ -172,6 +172,68 @@ export async function POST(req: NextRequest) {
         break
       }
 
+      case 'checkout.session.async_payment_failed': {
+        const session = event.data.object as Stripe.Checkout.Session
+        console.error('❌ Échec de paiement asynchrone pour la session:', session.id)
+
+        const userId = session.metadata?.user_id
+        const type = session.metadata?.type
+
+        // Gérer l'échec d'achat de crédits avec paiement différé (SEPA, etc.)
+        if (type === 'credit_purchase') {
+          const credits = parseInt(session.metadata?.credits || '0', 10)
+          
+          if (credits && userId) {
+            // Récupérer les crédits de l'utilisateur
+            const { data: userCredits } = await supabaseAdmin
+              .from('credits')
+              .select('*')
+              .eq('user_id', userId)
+              .single()
+
+            if (userCredits && userCredits.credits_remaining >= credits) {
+              // Retirer les crédits qui avaient été ajoutés prématurément
+              await supabaseAdmin
+                .from('credits')
+                .update({
+                  credits_remaining: userCredits.credits_remaining - credits,
+                  credits_total: userCredits.credits_total - credits,
+                })
+                .eq('user_id', userId)
+
+              // Enregistrer la transaction d'annulation
+              await supabaseAdmin
+                .from('credit_transactions')
+                .insert({
+                  user_id: userId,
+                  amount: -credits,
+                  type: 'refund',
+                  description: `Annulation suite à échec de paiement différé (${credits} crédits)`,
+                  stripe_payment_intent_id: session.payment_intent as string,
+                })
+
+              console.log(`✅ ${credits} crédits retirés suite à échec de paiement asynchrone`)
+            }
+          }
+        }
+
+        // Gérer l'échec d'un projet avec paiement différé
+        const projectId = session.metadata?.project_id
+        if (projectId) {
+          await supabaseAdmin
+            .from('projects')
+            .update({
+              payment_status: 'failed',
+              status: 'cancelled',
+            })
+            .eq('id', projectId)
+
+          console.log('❌ Projet annulé suite à échec de paiement asynchrone:', projectId)
+        }
+
+        break
+      }
+
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
         console.error('❌ Échec du paiement:', paymentIntent.id)
@@ -213,6 +275,87 @@ export async function POST(req: NextRequest) {
             console.error('Erreur envoi email échec paiement:', emailError)
           }
         }
+        break
+      }
+
+      case 'charge.refunded': {
+        const charge = event.data.object as Stripe.Charge
+        console.log('💸 Remboursement détecté:', charge.id)
+        
+        const paymentIntentId = charge.payment_intent as string
+        
+        if (!paymentIntentId) {
+          console.error('❌ PaymentIntent manquant pour le remboursement')
+          break
+        }
+        
+        // Trouver la transaction d'achat de crédits concernée
+        const { data: transaction } = await supabaseAdmin
+          .from('credit_transactions')
+          .select('*')
+          .eq('stripe_payment_intent_id', paymentIntentId)
+          .eq('type', 'purchase')
+          .single()
+        
+        if (transaction) {
+          // Récupérer les crédits actuels de l'utilisateur
+          const { data: userCredits } = await supabaseAdmin
+            .from('credits')
+            .select('*')
+            .eq('user_id', transaction.user_id)
+            .single()
+          
+          if (userCredits) {
+            // Retirer les crédits qui avaient été ajoutés
+            const newRemaining = Math.max(0, userCredits.credits_remaining - transaction.amount)
+            const newTotal = Math.max(0, userCredits.credits_total - transaction.amount)
+            
+            await supabaseAdmin
+              .from('credits')
+              .update({
+                credits_remaining: newRemaining,
+                credits_total: newTotal,
+              })
+              .eq('user_id', transaction.user_id)
+            
+            // Enregistrer la transaction de remboursement
+            await supabaseAdmin
+              .from('credit_transactions')
+              .insert({
+                user_id: transaction.user_id,
+                amount: -transaction.amount,
+                type: 'refund',
+                description: `Remboursement de ${transaction.amount} crédits`,
+                stripe_payment_intent_id: paymentIntentId,
+              })
+            
+            console.log(`✅ ${transaction.amount} crédits retirés pour l'utilisateur ${transaction.user_id}`)
+            console.log(`Crédits restants: ${newRemaining}`)
+          }
+        } else {
+          console.log('⚠️ Aucune transaction trouvée pour ce remboursement')
+        }
+        break
+      }
+
+      case 'charge.dispute.created': {
+        const dispute = event.data.object as Stripe.Dispute
+        console.log('⚠️ Litige créé:', dispute.id)
+        
+        // Notifier l'équipe admin d'un litige
+        // TODO: Envoyer un email à l'équipe ou créer une alerte
+        console.log(`💰 Montant contesté: ${dispute.amount / 100} ${dispute.currency}`)
+        console.log(`Raison: ${dispute.reason}`)
+        break
+      }
+
+      case 'charge.dispute.closed': {
+        const dispute = event.data.object as Stripe.Dispute
+        console.log(`${dispute.status === 'won' ? '✅' : '❌'} Litige clôturé:`, dispute.id)
+        console.log(`Statut: ${dispute.status}`)
+        
+        // Si perdu, les crédits ont déjà été retirés par charge.refunded
+        // Si gagné, rien à faire
         break
       }
 

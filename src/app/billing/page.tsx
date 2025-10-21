@@ -5,8 +5,14 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { motion } from 'framer-motion'
 import { CREDIT_PACKS } from '@/lib/credit-packs'
+import { CreditPackCard } from '@/components/features/billing'
+import { useToast } from '@/hooks/use-toast'
 
 interface Payment {
   id: string
@@ -28,7 +34,6 @@ export default function BillingPage() {
   const [buyingPack, setBuyingPack] = useState<string | null>(null)
   const [promoCode, setPromoCode] = useState('')
   const [applyingPromo, setApplyingPromo] = useState(false)
-  const [promoMessage, setPromoMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -70,21 +75,23 @@ export default function BillingPage() {
     })
   }
 
+  const { success, error: showError } = useToast()
+
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; className: string }> = {
-      succeeded: { label: 'Payé', className: 'bg-green-100 text-green-800' },
-      processing: { label: 'En cours', className: 'bg-yellow-100 text-yellow-800' },
-      requires_payment_method: { label: 'Action requise', className: 'bg-orange-100 text-orange-800' },
-      canceled: { label: 'Annulé', className: 'bg-gray-100 text-gray-800' },
-      failed: { label: 'Échoué', className: 'bg-red-100 text-red-800' },
+    const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+      succeeded: { label: 'Payé', variant: 'default' },
+      processing: { label: 'En cours', variant: 'secondary' },
+      requires_payment_method: { label: 'Action requise', variant: 'outline' },
+      canceled: { label: 'Annulé', variant: 'secondary' },
+      failed: { label: 'Échoué', variant: 'destructive' },
     }
 
-    const config = statusConfig[status] || { label: status, className: 'bg-gray-100 text-gray-800' }
+    const config = statusConfig[status] || { label: status, variant: 'secondary' as const }
 
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${config.className}`}>
+      <Badge variant={config.variant}>
         {config.label}
-      </span>
+      </Badge>
     )
   }
 
@@ -108,7 +115,10 @@ export default function BillingPage() {
       }
     } catch (err) {
       console.error('Erreur achat crédits:', err)
-      alert(err instanceof Error ? err.message : 'Erreur lors de l achat')
+      showError(
+        'Erreur lors de l\'achat',
+        err instanceof Error ? err.message : 'Une erreur est survenue'
+      )
     } finally {
       setBuyingPack(null)
     }
@@ -116,12 +126,11 @@ export default function BillingPage() {
 
   const handleApplyPromoCode = async () => {
     if (!promoCode.trim()) {
-      setPromoMessage({ type: 'error', text: 'Veuillez entrer un code promo' })
+      showError('Erreur', 'Veuillez entrer un code promo')
       return
     }
 
     setApplyingPromo(true)
-    setPromoMessage(null)
 
     try {
       const response = await fetch('/api/promo-code', {
@@ -136,20 +145,20 @@ export default function BillingPage() {
         throw new Error(data.error || 'Code promo invalide')
       }
 
-      setPromoMessage({ 
-        type: 'success', 
-        text: `Code promo appliqué ! ${data.credits} crédits ajoutés.` 
-      })
+      success(
+        'Code promo appliqué !',
+        `${data.credits} crédits ajoutés à votre compte`
+      )
       setPromoCode('')
       
       setTimeout(() => {
         window.location.reload()
       }, 2000)
     } catch (err) {
-      setPromoMessage({ 
-        type: 'error', 
-        text: err instanceof Error ? err.message : 'Code promo invalide' 
-      })
+      showError(
+        'Code promo invalide',
+        err instanceof Error ? err.message : 'Ce code promo n\'existe pas ou a expiré'
+      )
     } finally {
       setApplyingPromo(false)
     }
@@ -157,10 +166,20 @@ export default function BillingPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-600">Chargement...</p>
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
+        <div className="max-w-7xl mx-auto px-4 py-12">
+          <div className="text-center mb-12">
+            <Skeleton className="h-12 w-96 mx-auto mb-4" />
+            <Skeleton className="h-6 w-72 mx-auto" />
+          </div>
+          <div className="mb-12">
+            <Skeleton className="h-8 w-48 mb-6" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-[400px] w-full rounded-xl" />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -191,52 +210,12 @@ export default function BillingPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Acheter des crédits</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {CREDIT_PACKS.map((pack) => (
-              <Card 
+              <CreditPackCard
                 key={pack.id}
-                className={`relative overflow-hidden transition-all hover:shadow-lg ${
-                  pack.popular ? 'border-2 border-transparent bg-gradient-to-r from-yellow-500 to-orange-600 bg-clip-border' : ''
-                }`}
-                style={pack.popular ? {
-                  backgroundImage: 'linear-gradient(white, white), linear-gradient(to right, rgb(234, 179, 8), rgb(234, 88, 12))',
-                  backgroundOrigin: 'border-box',
-                  backgroundClip: 'padding-box, border-box'
-                } : undefined}
-              >
-                {pack.popular && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-3 py-1 text-xs font-bold">
-                    POPULAIRE
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle className="text-xl">{pack.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4">
-                    <div className="text-3xl font-bold text-gray-900">{pack.credits}</div>
-                    <div className="text-sm text-gray-500">crédits</div>
-                  </div>
-                  <div className="mb-4">
-                    <div className="text-2xl font-bold bg-gradient-to-r from-yellow-500 to-orange-600 bg-clip-text text-transparent">{pack.price}€</div>
-                    <div className="text-sm text-gray-500">
-                      {(pack.price / pack.credits).toFixed(2)}€ / crédit
-                    </div>
-                  </div>
-                  <Button
-                    onClick={() => handleBuyCredits(pack.id)}
-                    disabled={buyingPack === pack.id}
-                    className="w-full"
-                  >
-                    {buyingPack === pack.id ? (
-                      <span className="flex items-center justify-center">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                        Chargement...
-                      </span>
-                    ) : (
-                      'Acheter'
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
+                pack={pack}
+                onSelect={handleBuyCredits}
+                isLoading={buyingPack === pack.id}
+              />
             ))}
           </div>
         </motion.div>
@@ -253,13 +232,13 @@ export default function BillingPage() {
             </CardHeader>
             <CardContent>
               <div className="flex gap-2">
-                <input
+                <Input
                   type="text"
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                   placeholder="Entrez votre code"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-900"
                   disabled={applyingPromo}
+                  className="flex-1"
                 />
                 <Button
                   onClick={handleApplyPromoCode}
@@ -272,15 +251,6 @@ export default function BillingPage() {
                   )}
                 </Button>
               </div>
-              {promoMessage && (
-                <div className={`mt-3 p-3 rounded-lg text-sm ${
-                  promoMessage.type === 'success' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {promoMessage.text}
-                </div>
-              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -293,13 +263,11 @@ export default function BillingPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Historique des achats</h2>
           
           {error ? (
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-center text-red-600">
-                  <p>{error}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <Alert variant="destructive">
+              <AlertDescription>
+                {error}
+              </AlertDescription>
+            </Alert>
           ) : payments.length === 0 ? (
             <Card>
               <CardContent className="p-12">

@@ -29,7 +29,31 @@ export async function POST(req: NextRequest) {
     }
 
     // Récupérer la session Stripe
-    const session = await stripe.checkout.sessions.retrieve(sessionId)
+    let session
+    try {
+      session = await stripe.checkout.sessions.retrieve(sessionId)
+    } catch (stripeError: unknown) {
+      console.error('Erreur Stripe retrieve session:', stripeError)
+      const error = stripeError as { type?: string; code?: string; message?: string }
+      
+      if (error.type === 'StripeInvalidRequestError') {
+        if (error.code === 'resource_missing') {
+          return NextResponse.json(
+            { error: 'Session de paiement introuvable' },
+            { status: 404 }
+          )
+        }
+        return NextResponse.json(
+          { error: 'Requête invalide: ' + error.message },
+          { status: 400 }
+        )
+      }
+      
+      return NextResponse.json(
+        { error: 'Erreur lors de la récupération de la session' },
+        { status: 500 }
+      )
+    }
 
     console.log('🔍 Vérification session Stripe:', {
       sessionId: session.id,

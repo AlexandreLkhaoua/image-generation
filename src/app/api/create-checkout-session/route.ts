@@ -79,29 +79,62 @@ export async function POST(req: NextRequest) {
     console.log('📍 Base URL pour Stripe:', baseUrl)
 
     // 4. Créer une session Stripe Checkout
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: CURRENCY,
-            product_data: {
-              name: 'Génération d\'image IA',
-              description: 'Génération d\'une image transformée par intelligence artificielle',
+    let session
+    try {
+      session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: CURRENCY,
+              product_data: {
+                name: 'Génération d\'image IA',
+                description: 'Génération d\'une image transformée par intelligence artificielle',
+              },
+              unit_amount: PRICE_PER_GENERATION, // 200 centimes = 2.00 EUR
             },
-            unit_amount: PRICE_PER_GENERATION, // 200 centimes = 2.00 EUR
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+        mode: 'payment',
+        success_url: `${baseUrl}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/dashboard`,
+        metadata: {
+          project_id: project.id,
+          user_id: user.id,
         },
-      ],
-      mode: 'payment',
-      success_url: `${baseUrl}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/dashboard`,
-      metadata: {
-        project_id: project.id,
-        user_id: user.id,
-      },
-    })
+      })
+    } catch (stripeError: unknown) {
+      console.error('Erreur Stripe:', stripeError)
+      const error = stripeError as { type?: string; code?: string; message?: string }
+      
+      // Gérer les erreurs spécifiques de Stripe
+      if (error.type === 'StripeInvalidRequestError') {
+        if (error.code === 'resource_missing') {
+          return NextResponse.json(
+            { error: 'Prix invalide ou non trouvé' },
+            { status: 400 }
+          )
+        }
+        return NextResponse.json(
+          { error: 'Requête invalide: ' + error.message },
+          { status: 400 }
+        )
+      }
+      
+      if (error.type === 'StripeAPIError') {
+        return NextResponse.json(
+          { error: 'Erreur de l\'API Stripe. Veuillez réessayer.' },
+          { status: 503 }
+        )
+      }
+
+      // Erreur générique
+      return NextResponse.json(
+        { error: 'Erreur lors de la création de la session de paiement' },
+        { status: 500 }
+      )
+    }
 
     // 5. Mettre à jour le projet avec le session_id
     await supabaseAdmin
@@ -119,9 +152,9 @@ export async function POST(req: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Erreur création checkout session:', error)
+    console.error('Erreur inattendue:', error)
     return NextResponse.json(
-      { error: 'Erreur lors de la création de la session de paiement' },
+      { error: 'Erreur interne du serveur' },
       { status: 500 }
     )
   }
