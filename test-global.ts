@@ -13,6 +13,8 @@
 import * as dotenv from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
 import Replicate from 'replicate'
+import * as fs from 'fs'
+import * as path from 'path'
 
 // Charger les variables d'environnement
 dotenv.config({ path: '.env.local' })
@@ -157,8 +159,6 @@ async function testReplicateAPI() {
     log.step('Test de connexion à l\'API Replicate...')
     
     // Charger une image locale depuis le Bureau
-    const fs = require('fs')
-    const path = require('path')
     const homeDir = process.env.HOME || process.env.USERPROFILE || ''
     const imagePath = path.join(homeDir, 'Desktop', 'screenshots', 'SCR-20251008-njup.jpeg')
     
