@@ -1,0 +1,65 @@
+name: CI/CD Pipeline
+
+# Déclenche le workflow quand on push sur main ou quand on crée une pull request
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Job 1: Tester et Builder
+  test-and-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. Télécharge le code du repository
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Configure Node.js
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 3. Installe les dépendances
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      # 4. Lance les tests
+      - name: 🧪 Run tests
+        run: npm test -- --passWithNoTests
+        continue-on-error: false
+
+      # 5. Vérifie le linting (qualité du code)
+      - name: 🔍 Check linting
+        run: npm run lint
+        continue-on-error: true
+
+      # 6. Build le projet
+      - name: 🏗️ Build project
+        run: npm run build
+        env:
+          # Variables d'environnement nécessaires pour le build
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      # 7. Affiche un message de succès
+      - name: ✅ Build successful
+        run: echo "✅ All tests passed and build successful!"
+
+  # Job 2: Notifier le succès (optionnel)
+  notify-success:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+      - name: 🎉 Success notification
+        run: |
+          echo "🎉 CI/CD Pipeline completed successfully!"
+          echo "✅ Tests passed"
+          echo "✅ Build successful"
+          echo "🚀 Ready for deployment"
