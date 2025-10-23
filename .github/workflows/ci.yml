@@ -72,3 +72,36 @@ jobs:
           echo "✅ Tests passed"
           echo "✅ Build successful"
           echo "🚀 Ready for deployment"
+  
+  # Job 3: Notifier l'échec
+  notify-failure:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: failure()
+    
+    steps:
+      - name: ❌ Failure notification
+        run: |
+          echo "❌ CI/CD Pipeline failed!"
+          echo "Please check the logs at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      
+      # Optionnel : envoyer un email
+      - name: 📧 Send email notification
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "❌ Build Failed: ${{ github.repository }}"
+          body: |
+            Build failed for ${{ github.repository }}
+            
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+            
+            Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          to: votre-email@example.com
+          from: GitHub Actions
+        continue-on-error: true
