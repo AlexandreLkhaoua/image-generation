@@ -436,24 +436,24 @@ function DashboardContent() {
   return (
     <div className="min-h-screen bg-white">
       <div className="w-full px-6 py-8 max-w-[1600px] mx-auto">
-        <div className="mb-8 flex justify-between items-start">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-            <p className="text-gray-600">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+            <p className="text-sm sm:text-base text-gray-600">
               Bienvenue {user.email} ! Créez et gérez vos images IA.
             </p>
           </div>
           
           {/* Affichage des crédits */}
-          <div className="flex gap-3 items-center">
+          <div className="flex flex-row sm:flex-row gap-2 sm:gap-3 items-center">
             {loadingCredits ? (
               <div className="text-sm text-gray-500">Chargement...</div>
             ) : (
               <>
                 {/* Bouton non cliquable - Crédits disponibles */}
-                <div className="bg-gray-800 text-white px-6 py-4 rounded-xl shadow-lg cursor-default">
-                  <div className="text-sm font-medium opacity-90">Crédits disponibles</div>
-                  <div className="text-4xl font-bold mt-1">
+                <div className="bg-gray-800 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl shadow-lg cursor-default flex-1 sm:flex-initial">
+                  <div className="text-xs sm:text-sm font-medium opacity-90">Crédits disponibles</div>
+                  <div className="text-2xl sm:text-4xl font-bold mt-1">
                     {creditsRemaining ?? 0}
                   </div>
                 </div>
@@ -461,13 +461,13 @@ function DashboardContent() {
                 {/* Bouton cliquable - Obtenir des crédits */}
                 <Button
                   onClick={() => router.push('/billing')}
-                  className="bg-gradient-to-br from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white px-6 py-4 h-auto rounded-xl shadow-lg transition-all hover:shadow-xl"
+                  className="bg-gradient-to-br from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white px-4 sm:px-6 py-3 sm:py-4 h-auto rounded-lg sm:rounded-xl shadow-lg transition-all hover:shadow-xl flex-1 sm:flex-initial"
                 >
                   <div className="flex flex-col items-center">
-                    <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    <span className="text-sm font-semibold">Obtenir des crédits</span>
+                    <span className="text-xs sm:text-sm font-semibold whitespace-nowrap">Obtenir des crédits</span>
                   </div>
                 </Button>
               </>
@@ -508,8 +508,8 @@ function DashboardContent() {
         )}
 
         {/* Formulaire de génération */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
-          <Card className="h-[400px] flex flex-col">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
+          <Card className="h-[350px] sm:h-[400px] flex flex-col">
             <CardHeader>
               <CardTitle>1. Sélectionnez votre image</CardTitle>
             </CardHeader>
@@ -530,9 +530,9 @@ function DashboardContent() {
             </CardContent>
           </Card>
 
-          <Card className="h-[400px] flex flex-col">
+          <Card className="h-[350px] sm:h-[400px] flex flex-col">
             <CardHeader>
-              <CardTitle>2. Sélectionnez votre modèle</CardTitle>
+              <CardTitle className="text-base sm:text-lg">2. Sélectionnez votre modèle</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-center space-y-4">
               <select
@@ -548,9 +548,9 @@ function DashboardContent() {
             </CardContent>
           </Card>
 
-          <Card className="h-[400px] flex flex-col">
+          <Card className="h-[350px] sm:h-[400px] flex flex-col">
             <CardHeader>
-              <CardTitle>3. Décrivez la transformation</CardTitle>
+              <CardTitle className="text-base sm:text-lg">3. Décrivez la transformation</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-center space-y-4">
               <textarea
@@ -564,11 +564,11 @@ function DashboardContent() {
         </div>
 
         {/* Bouton de génération */}
-        <div className="mb-12 flex flex-col items-center">
+        <div className="mb-8 sm:mb-12 flex flex-col items-center px-4">
           <Button
             onClick={handlePayAndGenerate}
             disabled={!selectedFile || !prompt.trim() || generatingProject === 'new'}
-            className="max-w-md bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-semibold py-4 px-12 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+            className="w-full sm:max-w-md bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-semibold py-3 sm:py-4 px-8 sm:px-12 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-base sm:text-lg"
           >
             {generatingProject === 'new' ? (
               <span className="flex items-center justify-center gap-2">
@@ -659,7 +659,7 @@ function DashboardContent() {
                 <p className="text-sm text-gray-500">Créez votre première image pour commencer !</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {projects.map((project, index) => (
                   <motion.div
                     key={project.id}
