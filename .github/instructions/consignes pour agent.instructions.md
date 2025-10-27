@@ -5,6 +5,7 @@ Provide project context and coding guidelines that AI should follow when generat
 
 ## Règles générales
 - Ne jamais créer de fichiers .md sauf si explicitement demandé
+- vérifier si il y a besoin de mettre à jour les fichiers de tests de workflow github (.github/workflows/...)
 
 ## Base de données Supabase
 - Ne jamais créer de fichiers .sql

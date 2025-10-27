@@ -5,8 +5,7 @@ describe('useFileUpload Hook', () => {
   it('initializes with empty state', () => {
     const { result } = renderHook(() => useFileUpload())
     
-    expect(result.current.selectedFile).toBeNull()
-    expect(result.current.previewUrl).toBe('')
+    expect(result.current.selectedFiles).toEqual([])
     expect(result.current.error).toBe('')
   })
 
@@ -18,8 +17,15 @@ describe('useFileUpload Hook', () => {
       type: 'image/jpeg',
     })
 
+    const event = {
+      target: {
+        files: [largeFile],
+        value: ''
+      }
+    } as unknown as React.ChangeEvent<HTMLInputElement>
+
     act(() => {
-      result.current.handleFileSelect(largeFile)
+      result.current.handleFileInput(event)
     })
 
     expect(result.current.error).toContain('trop volumineux')
@@ -32,31 +38,46 @@ describe('useFileUpload Hook', () => {
       type: 'text/plain',
     })
 
+    const event = {
+      target: {
+        files: [invalidFile],
+        value: ''
+      }
+    } as unknown as React.ChangeEvent<HTMLInputElement>
+
     act(() => {
-      result.current.handleFileSelect(invalidFile)
+      result.current.handleFileInput(event)
     })
 
     expect(result.current.error).toContain('Format non supporté')
   })
 
-  it('clears file and preview URL', () => {
+  it('clears files and preview URLs', () => {
     const { result } = renderHook(() => useFileUpload())
     
     const validFile = new File(['content'], 'image.jpg', {
       type: 'image/jpeg',
     })
 
+    const event = {
+      target: {
+        files: [validFile],
+        value: ''
+      }
+    } as unknown as React.ChangeEvent<HTMLInputElement>
+
     act(() => {
-      result.current.handleFileSelect(validFile)
+      result.current.handleFileInput(event)
     })
 
-    expect(result.current.selectedFile).toBe(validFile)
+    expect(result.current.selectedFiles.length).toBe(1)
+    expect(result.current.selectedFiles[0].file).toBe(validFile)
 
     act(() => {
-      result.current.clearFile()
+      result.current.clearFiles()
     })
 
-    expect(result.current.selectedFile).toBeNull()
-    expect(result.current.previewUrl).toBe('')
+    expect(result.current.selectedFiles).toEqual([])
+    expect(result.current.error).toBe('')
   })
 })
