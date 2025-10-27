@@ -14,8 +14,9 @@ const supabaseAdmin = createSupabaseClient(
 )
 
 // Définition des codes promo disponibles
-const PROMO_CODES: Record<string, { credits: number; description: string }> = {
+const PROMO_CODES: Record<string, { credits: number; description: string; reusable?: boolean }> = {
   'ALEX10': { credits: 10, description: 'Code promo spécial - 10 crédits offerts' },
+  'ALEXINF': { credits: 10, description: 'Code promo illimité - 10 crédits offerts', reusable: true },
 }
 
 export async function POST(req: NextRequest) {
@@ -53,19 +54,21 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Vérifier si l'utilisateur a déjà utilisé ce code promo
-    const { data: existingUsage } = await supabaseAdmin
-      .from('promo_code_usage')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('promo_code', upperCode)
-      .single()
+    // Vérifier si l'utilisateur a déjà utilisé ce code promo (sauf si réutilisable)
+    if (!promoConfig.reusable) {
+      const { data: existingUsage } = await supabaseAdmin
+        .from('promo_code_usage')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('promo_code', upperCode)
+        .single()
 
-    if (existingUsage) {
-      return NextResponse.json(
-        { error: 'Vous avez déjà utilisé ce code promo' },
-        { status: 400 }
-      )
+      if (existingUsage) {
+        return NextResponse.json(
+          { error: 'Vous avez déjà utilisé ce code promo' },
+          { status: 400 }
+        )
+      }
     }
 
     // Récupérer ou créer l'entrée de crédits pour l'utilisateur

@@ -121,11 +121,14 @@ export async function POST(request: NextRequest) {
       .eq('id', projectId)
 
     const inputImageUrl = project.input_image_url
+    const inputImagesUrls = project.input_images_urls || [inputImageUrl] // Fallback pour anciens projets
     const prompt = project.prompt
+    const model = project.model || 'google/nano-banana'
 
     // 4. Appeler Replicate pour générer l'image
-    console.log('Appel Replicate avec URL:', inputImageUrl)
+    console.log('Appel Replicate avec URLs:', inputImagesUrls)
     console.log('Prompt utilisateur:', prompt)
+    console.log('Modèle sélectionné:', model)
     
     // Utiliser directement le prompt de l'utilisateur pour que le modèle l'interprète correctement
     // Le modèle Gemini 2.5 comprend bien les instructions naturelles en anglais et en français
@@ -133,16 +136,33 @@ export async function POST(request: NextRequest) {
     
     let output
     try {
-      // L'API Replicate attend un tableau même pour une seule image
+      // Construire l'input selon le modèle sélectionné
+      let replicateInput: Record<string, string | number | boolean | string[]>
+      
+      if (model === 'black-forest-labs/flux-kontext-max') {
+        // Flux Kontext Max utilise input_image (string) - UNE SEULE image
+        replicateInput = {
+          prompt: prompt,
+          input_image: inputImagesUrls[0],
+          output_format: "jpg"
+        }
+      } else {
+        // Google Nano Banana utilise image_input (array) - MULTI-IMAGE FUSION
+        replicateInput = {
+          prompt: prompt,
+          image_input: inputImagesUrls, // Tableau d'URLs - supporte plusieurs images !
+          aspect_ratio: "match_input_image",
+          output_format: "jpg"
+        }
+      }
+      
+      console.log('Input Replicate:', replicateInput)
+      
+      // L'API Replicate
       output = await replicate.run(
-        process.env.REPLICATE_MODEL! as `${string}/${string}` | `${string}/${string}:${string}`,
+        model as `${string}/${string}` | `${string}/${string}:${string}`,
         {
-          input: {
-            prompt: prompt,  // Utiliser le prompt original de l'utilisateur
-            image_input: [inputImageUrl],
-            aspect_ratio: "match_input_image",
-            output_format: "jpg"
-          }
+          input: replicateInput
         }
       )
       console.log('Réponse Replicate:', typeof output)

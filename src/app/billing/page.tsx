@@ -226,7 +226,7 @@ export default function BillingPage() {
           transition={{ delay: 0.2 }}
           className="mb-8 sm:mb-12"
         >
-          <Card className="max-w-md mx-auto">
+          <Card className="max-w-md mx-auto bg-white">
             <CardHeader>
               <CardTitle className="text-lg sm:text-xl">Code Promo</CardTitle>
             </CardHeader>
@@ -238,11 +238,12 @@ export default function BillingPage() {
                   onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                   placeholder="Entrez votre code"
                   disabled={applyingPromo}
-                  className="flex-1"
+                  className="flex-1 bg-white text-gray-900 focus:ring-0 focus:outline-none"
                 />
                 <Button
                   onClick={handleApplyPromoCode}
                   disabled={applyingPromo || !promoCode.trim()}
+                  className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-semibold"
                 >
                   {applyingPromo ? (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

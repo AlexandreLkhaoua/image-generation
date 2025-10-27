@@ -1,68 +1,87 @@
 import { useState } from 'react'
 import { validateImageFile } from '@/lib/utils'
 
-interface UseFileUploadReturn {
-  selectedFile: File | null
+interface UploadedImage {
+  file: File
   previewUrl: string
+  id: string
+}
+
+interface UseFileUploadReturn {
+  selectedFiles: UploadedImage[]
   error: string
-  handleFileSelect: (file: File) => void
   handleDrop: (e: React.DragEvent) => void
   handleFileInput: (e: React.ChangeEvent<HTMLInputElement>) => void
-  clearFile: () => void
+  removeFile: (id: string) => void
+  clearFiles: () => void
 }
 
 export function useFileUpload(): UseFileUploadReturn {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string>('')
+  const [selectedFiles, setSelectedFiles] = useState<UploadedImage[]>([])
   const [error, setError] = useState<string>('')
 
-  const handleFileSelect = (file: File) => {
-    const validation = validateImageFile(file)
+  const handleFileSelect = (files: FileList | File[]) => {
+    const fileArray = Array.from(files)
     
-    if (!validation.valid) {
-      setError(validation.error || 'Fichier invalide')
-      return
-    }
+    fileArray.forEach(file => {
+      const validation = validateImageFile(file)
+      
+      if (!validation.valid) {
+        setError(validation.error || 'Fichier invalide')
+        return
+      }
 
-    setSelectedFile(file)
-    const url = URL.createObjectURL(file)
-    setPreviewUrl(url)
-    setError('')
+      const url = URL.createObjectURL(file)
+      const newImage: UploadedImage = {
+        file,
+        previewUrl: url,
+        id: `${Date.now()}-${Math.random()}`
+      }
+      
+      setSelectedFiles(prev => [...prev, newImage])
+      setError('')
+    })
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     const files = e.dataTransfer.files
-    if (files.length > 0 && files[0].type.startsWith('image/')) {
-      handleFileSelect(files[0])
+    if (files.length > 0) {
+      handleFileSelect(files)
     }
   }
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files && files.length > 0) {
-      handleFileSelect(files[0])
+      handleFileSelect(files)
     }
     // Réinitialiser l'input pour permettre de sélectionner le même fichier
     e.target.value = ''
   }
 
-  const clearFile = () => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl)
-    }
-    setSelectedFile(null)
-    setPreviewUrl('')
+  const removeFile = (id: string) => {
+    setSelectedFiles(prev => {
+      const imageToRemove = prev.find(img => img.id === id)
+      if (imageToRemove) {
+        URL.revokeObjectURL(imageToRemove.previewUrl)
+      }
+      return prev.filter(img => img.id !== id)
+    })
+  }
+
+  const clearFiles = () => {
+    selectedFiles.forEach(img => URL.revokeObjectURL(img.previewUrl))
+    setSelectedFiles([])
     setError('')
   }
 
   return {
-    selectedFile,
-    previewUrl,
+    selectedFiles,
     error,
-    handleFileSelect,
     handleDrop,
     handleFileInput,
-    clearFile,
+    removeFile,
+    clearFiles,
   }
 }

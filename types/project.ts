@@ -5,6 +5,7 @@ export interface Project {
   input_image_url: string
   output_image_url: string | null
   prompt: string
+  model?: string
   status: 'pending' | 'processing' | 'completed' | 'failed'
 }
 

@@ -46,16 +46,16 @@ function DashboardContent() {
   const [loadingCredits, setLoadingCredits] = useState(true)
 
   const {
-    selectedFile,
-    previewUrl,
+    selectedFiles,
     error: uploadError,
     handleDrop,
     handleFileInput,
+    removeFile,
   } = useFileUpload()
 
   const {
     error: checkoutError,
-  } = useStripeCheckout({ imageFile: selectedFile, prompt })
+  } = useStripeCheckout({ imageFile: selectedFiles[0]?.file || null, prompt })
 
   // Redirection si non authentifié
   useEffect(() => {
@@ -171,7 +171,7 @@ function DashboardContent() {
         pollingIntervalRef.current = null
       }
     }
-  }, [pendingProjectId, supabase])
+  }, [pendingProjectId, supabase, loadProjects])
 
   // Gérer le retour de Stripe après paiement
   useEffect(() => {
@@ -239,7 +239,13 @@ function DashboardContent() {
   }, [searchParams, loadProjects])
 
   const handlePayAndGenerate = async () => {
-    if (!selectedFile || !prompt.trim()) {
+    if (!selectedFiles || selectedFiles.length === 0 || !prompt.trim()) {
+      return
+    }
+
+    // Validation : Flux Kontext Max n'accepte qu'une seule image
+    if (selectedModel === 'black-forest-labs/flux-kontext-max' && selectedFiles.length > 1) {
+      alert('⚠️ Flux Kontext Max n\'accepte qu\'une seule image.\n\nVeuillez supprimer les images supplémentaires ou sélectionner le modèle Google Nano Banana pour utiliser plusieurs images.')
       return
     }
 
@@ -254,15 +260,18 @@ function DashboardContent() {
   }
 
   const handleGenerateWithCredits = async () => {
-    if (!selectedFile || !prompt.trim()) {
+    if (!selectedFiles || selectedFiles.length === 0 || !prompt.trim()) {
       return
     }
 
     setGeneratingProject('new')
     try {
-      // 1. Créer le projet avec l'image uploadée
+      // 1. Créer le projet avec les images uploadées
       const formData = new FormData()
-      formData.append('image', selectedFile)
+      selectedFiles.forEach((img, index) => {
+        formData.append(`image_${index}`, img.file)
+      })
+      formData.append('images_count', selectedFiles.length.toString())
       formData.append('prompt', prompt)
       formData.append('model', selectedModel)
 
@@ -518,14 +527,17 @@ function DashboardContent() {
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleFileInput}
                 className="hidden"
               />
               <ImageUpload
+                images={selectedFiles}
                 onDrop={handleDrop}
                 onFileSelect={() => fileInputRef.current?.click()}
-                previewUrl={previewUrl}
+                onRemove={removeFile}
                 error={uploadError || undefined}
+                maxImages={selectedModel === 'black-forest-labs/flux-kontext-max' ? 1 : 10}
               />
             </CardContent>
           </Card>
@@ -540,11 +552,24 @@ function DashboardContent() {
                 onChange={(e) => setSelectedModel(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 bg-white"
               >
-                <option value="google/nano-banana">google/nano-banana</option>
+                <option value="google/nano-banana">Google Nano Banana</option>
+                <option value="black-forest-labs/flux-kontext-max">Flux Kontext Max</option>
               </select>
-              <p className="text-sm text-gray-500">
-                Sélectionnez le modèle IA pour transformer votre image
-              </p>
+              <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                {selectedModel === 'black-forest-labs/flux-kontext-max' ? (
+                  <div>
+                    <p className="font-medium mb-1">🎨 Flux Kontext Max</p>
+                    <p className="text-xs">Transformations créatives 3D, effets spatiaux et modifications de contexte avancées</p>
+                    <p className="text-xs text-orange-600 font-medium mt-2">⚠️ 1 seule image maximum</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="font-medium mb-1">🤖 Google Nano Banana</p>
+                    <p className="text-xs">Édition d&apos;images polyvalente avec compréhension du contexte et multi-image fusion</p>
+                    <p className="text-xs text-green-600 font-medium mt-2">✓ Plusieurs images acceptées (fusion automatique)</p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -567,7 +592,7 @@ function DashboardContent() {
         <div className="mb-8 sm:mb-12 flex flex-col items-center px-4">
           <Button
             onClick={handlePayAndGenerate}
-            disabled={!selectedFile || !prompt.trim() || generatingProject === 'new'}
+            disabled={!selectedFiles || selectedFiles.length === 0 || !prompt.trim() || generatingProject === 'new'}
             className="w-full sm:max-w-md bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-semibold py-3 sm:py-4 px-8 sm:px-12 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-base sm:text-lg"
           >
             {generatingProject === 'new' ? (

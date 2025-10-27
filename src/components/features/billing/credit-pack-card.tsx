@@ -89,9 +89,13 @@ export function CreditPackCard({ pack, onSelect, isLoading = false, className }:
         <Button
           onClick={() => onSelect(pack.id)}
           disabled={isLoading}
-          className="w-full"
+          className={cn(
+            "w-full",
+            pack.popular 
+              ? "bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+              : "bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+          )}
           size="lg"
-          variant={pack.popular ? 'default' : 'outline'}
         >
           {isLoading ? (
             <div className="flex items-center gap-2">

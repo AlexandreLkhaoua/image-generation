@@ -28,46 +28,62 @@ export async function POST(req: NextRequest) {
 
     // Récupérer les données du FormData
     const formData = await req.formData()
-    const imageFile = formData.get('image') as File
     const prompt = formData.get('prompt') as string
-    // const model = formData.get('model') as string || 'google/nano-banana'
+    const model = formData.get('model') as string || 'google/nano-banana'
+    const imagesCount = parseInt(formData.get('images_count') as string || '0')
 
-    if (!imageFile || !prompt) {
+    if (imagesCount === 0 || !prompt) {
       return NextResponse.json(
-        { error: 'Image et prompt requis' },
+        { error: 'Au moins une image et un prompt requis' },
         { status: 400 }
       )
     }
 
-    // 1. Uploader l'image dans Supabase Storage
-    const fileName = `${user.id}/${Date.now()}-${imageFile.name}`
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from(process.env.SUPABASE_INPUT_BUCKET || 'input-images')
-      .upload(fileName, imageFile, {
-        contentType: imageFile.type,
-        upsert: false,
-      })
+    // Uploader toutes les images et collecter les URLs
+    const imageUrls: string[] = []
+    
+    for (let i = 0; i < imagesCount; i++) {
+      const imageFile = formData.get(`image_${i}`) as File
+      
+      if (!imageFile) continue
 
-    if (uploadError) {
-      console.error('Erreur upload image:', uploadError)
-      return NextResponse.json(
-        { error: 'Erreur lors de l\'upload de l\'image' },
-        { status: 500 }
-      )
+      // 1. Uploader l'image dans Supabase Storage
+      const fileName = `${user.id}/${Date.now()}-${i}-${imageFile.name}`
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from(process.env.SUPABASE_INPUT_BUCKET || 'input-images')
+        .upload(fileName, imageFile, {
+          contentType: imageFile.type,
+          upsert: false,
+        })
+
+      if (uploadError) {
+        console.error('Erreur upload image:', uploadError)
+        return NextResponse.json(
+          { error: `Erreur lors de l'upload de l'image ${i + 1}` },
+          { status: 500 }
+        )
+      }
+
+      // Générer l'URL publique de l'image
+      const { data: { publicUrl } } = supabaseAdmin.storage
+        .from(process.env.SUPABASE_INPUT_BUCKET || 'input-images')
+        .getPublicUrl(fileName)
+
+      imageUrls.push(publicUrl)
     }
 
-    // Générer l'URL publique de l'image
-    const { data: { publicUrl } } = supabaseAdmin.storage
-      .from(process.env.SUPABASE_INPUT_BUCKET || 'input-images')
-      .getPublicUrl(fileName)
+    // Stocker la première URL comme input_image_url et toutes les URLs dans un champ JSON
+    const primaryImageUrl = imageUrls[0]
 
     // 2. Créer un projet dans la base de données avec payment_status='paid' (car payé avec crédits)
     const { data: project, error: projectError } = await supabaseAdmin
       .from('projects')
       .insert({
         user_id: user.id,
-        input_image_url: publicUrl,
+        input_image_url: primaryImageUrl,
+        input_images_urls: imageUrls, // Tableau de toutes les URLs
         prompt,
+        model,
         status: 'pending',
         payment_status: 'paid', // Considéré comme payé car utilise des crédits
         payment_amount: 0, // Pas de paiement Stripe
